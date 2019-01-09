@@ -1,8 +1,12 @@
 #include <cstring>
+#include <string>
+using std::string;
 typedef std::map<string,size_t> strToIndexMap;
 strToIndexMap labelMap; 
 struct ParseObj {
     Instruction ins;
+    string insString;
+    size_t line;
     union {
         struct {
             Integer rs,rt,rd,shamt;
@@ -20,7 +24,7 @@ struct ParseObj {
         } Jump;
     } props;
     ParseObj(){}
-    ParseObj ( const Instruction & );
+    ParseObj ( const Instruction & , string const &, size_t x);
     ParseObj ( Instruction i, int a , int b = 0, int c = 0, int d = 0 );
     bool validateObj( ParseObj * );
     bool validateObj( const ParseObj &);
@@ -72,7 +76,7 @@ void ParseObj::setRtype( Integer reg1, Integer reg2, Integer reg3 ){
     }
 }
 
-ParseObj :: ParseObj ( const Instruction &i ): ins(i) {
+ParseObj :: ParseObj ( const Instruction &i, string const &s, size_t x ): ins(i),insString(s),line(x) {
     if ( ins.insClass == Instruction::ITYPE ){
         setItype(0,0,0);
     } else if ( ins.insClass == Instruction :: RTYPE ){
@@ -88,9 +92,12 @@ class Parser {
     Lexer lex;
     char buff[256];
     Instruction current;
+    string currentStr;
+    size_t currentLine;
     bool err;
     size_t insCount;
     Parser ( const char *p ): instructions( p ),lex(p),err(false),insCount(0){
+        currentStr.reserve(256);
         lex.next(buff);
     }
     ParseObj *parse();
@@ -138,10 +145,8 @@ void Parser :: displayError(const char *fmt, ... ){
     va_list args;
     va_start( args, fmt );
     char buffer[ BUFFER_SIZE ];
-    Position p = lex.currentPos(); // TODO: Proper way of handling columns
-    string ins = lex.instructionString();
     size_t len = snprintf(buffer,BUFFER_SIZE,"At line %zu:\n"\
-                        "Instruction : %s \nError: ", p.row, ins.c_str() );
+                        "Instruction : %s \nError: ", currentLine, currentStr.c_str() );
     try {
         if ( len > BUFFER_SIZE ){
             throw "Allocated buffer is smaller than the error message !";
@@ -187,6 +192,7 @@ int Parser::parseInt(){
 }
 ParseObj *Parser :: parseRtype ( ){
     Integer reg1,reg2,reg3;
+    ParseObj *p = new ParseObj( current, currentStr, currentLine );
     reg1 = parseRegister();
     /* 
      * Sets error to true if we dont get the expected TOKEN.
@@ -198,26 +204,23 @@ ParseObj *Parser :: parseRtype ( ){
     err = !lex.expect( Lexer :: TOKEN_COMMA ,buff );
     reg3 = parseRegister();
     if ( err ){
-        lex.previousIns(buff);
         displayError("Invalid arguments to the instruction \'%s\'.",current.str.c_str());
-        lex.next(buff);
     }else if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE, buff) ){
         err = true;
         displayError("Too many arguments to instruction %s.", current.str.c_str() );
     }
-    ParseObj *p = new ParseObj( current );
     p->setRtype( reg1,reg2,reg3 );
     return p;
 }
 
 ParseObj *Parser :: parseItype ( ){
     Integer rs,rt,addr;
+    ParseObj *p =  new ParseObj (current, currentStr, currentLine);
     rt = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA, buff);
     rs = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff); 
     addr = parseInt();
-    ParseObj *p = new ParseObj( current );
     if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE, buff) ){
         err = true;
         displayError("Too many arguments to instruction %s.", current.str.c_str() );
@@ -228,13 +231,13 @@ ParseObj *Parser :: parseItype ( ){
 
 ParseObj *Parser::parseLS(){
     Integer rs,rt,off;
+    ParseObj *p = new ParseObj ( current, currentStr , currentLine);
     rt = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff);
     off = parseInt();
     lex.expect(Lexer::TOKEN_LPAREN,buff);
     rs = parseRegister();
     lex.expect(Lexer::TOKEN_RPAREN,buff);
-    ParseObj *p = new ParseObj( current );
     if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE,buff) ){
         err = true;
         displayError("Too many arguments to instruction %s.", current.str.c_str() );
@@ -245,7 +248,7 @@ ParseObj *Parser::parseLS(){
 
 ParseObj *Parser::parseBranch(){
     Integer rs,rt,offset;
-    ParseObj *p = new ParseObj(current);
+    ParseObj *p = new ParseObj(current, currentStr, currentLine );
     rs = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff);
     rt = parseRegister();
@@ -269,7 +272,7 @@ ParseObj *Parser::parseBranch(){
 }
 
 ParseObj *Parser::parseJump(){
-    ParseObj *p = new ParseObj(current);
+    ParseObj *p = new ParseObj(current,currentStr, currentLine);
     if ( lex.isToken(Lexer::TOKEN_NAME) ){
         const char *str = strdup(buff);
         p->setJump(str);
@@ -311,12 +314,16 @@ ParseObj *Parser::parseIns(  ){
 ParseObj* Parser::parse( ){
     if ( lex.isToken( Lexer :: TOKEN_INSTRUCTION ) ){
         current = insMap[ string ( buff ) ];
+        currentStr = lex.insString();
+        currentLine = lex.getLineNum();
         lex.next(buff);
         ParseObj *p = parseIns( );
         while ( err && !lex.isToken( Lexer :: TOKEN_END ) ){
             delete p;
             lex.nextInstruction(buff);
             current = insMap[ string (buff) ];
+            currentStr = lex.insString();
+            currentLine = lex.getLineNum();
             lex.next(buff);
             err = false;
             p = parseIns();
@@ -332,6 +339,8 @@ ParseObj* Parser::parse( ){
         // The token has to be a label, else we display error
         string str(buff);
         lex.next(buff);
+        currentStr = lex.insString();
+        currentLine = lex.getLineNum();
         if ( !lex.match(Lexer::TOKEN_COLON,buff) ){
             displayError("Unidentified instruction \'%s\'.",str.c_str() );
             lex.nextInstruction(buff);
@@ -410,11 +419,11 @@ bool ParseObj :: validateObj( const ParseObj &p ){
 #define NEW_INS(NAME,OP,FUNC,KIND,CLASS) ( Instruction ( string (#NAME), OP, FUNC, Instruction::KIND, Instruction::CLASS) ) 
 void Parser::test(){
     string str("addr $s0,$s1\n"\
-                "Label:\n"\
+                "      Label:\n"\
                "addi $s0,$s1,ab\n"\
                "lw $s0,0(32)\n"\
-               "addr $s0,$s1\n"\
-               "sw $s0,0($s1)\n"\
+               "     addr $s0,$s1\n"\
+               "   sw $s0,0($s1)\n"\
                "garbage $s0,$s1,$s3\n"\
                "Exit:"\
                "beq $s0,$s1,Exit\n"\

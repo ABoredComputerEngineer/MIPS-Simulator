@@ -101,7 +101,18 @@ struct Lexer{
     static void test();
     string instructionString();
     void previousIns(char *);
+    string insString();
+    inline size_t getLineNum( ){ return line; }
 };
+
+string Lexer :: insString(){
+    string str;
+    str.reserve( 256 );
+    for ( const char *s = line_start; *s && *s != '\n' ; s++ ){
+        str += *s;
+    }
+    return str;
+}
 
 string Lexer :: instructionString (){
     //need to handle it more efficiently
