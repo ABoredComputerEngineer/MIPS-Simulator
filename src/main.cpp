@@ -5,9 +5,10 @@
 #include <map>
 #include "lex.cpp"
 #include "parse.cpp"
-
+#include "gen.cpp"
 int main( ){
     init();
     Lexer::test();
     Parser::test();
+    Generator::test();
 }

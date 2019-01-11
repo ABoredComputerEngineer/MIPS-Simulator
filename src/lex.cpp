@@ -37,19 +37,30 @@ struct Instruction {
     Instruction () {}
     Instruction ( string s, Integer op,Integer f, InstructionKind k, InstructionClass c):\
     str(s), opcode(op),func(f), kind(k), insClass(c) {}
-    inline bool isShift();
-    inline bool isBranch();
-    inline bool isJump();
+    inline bool isShift() const;
+    inline bool isShiftLogical() const;
+    inline bool isShiftVariable() const;
+    inline bool isBranch() const ;
+    inline bool isJump() const;
+    inline InstructionClass type() const { return insClass; };
 };
 
-inline bool Instruction :: isShift ( ){
-    return ( func == 0 || func == 2 || func == 4 || func == 6 );
+inline bool Instruction :: isShift ( )const{
+    return ( opcode == 0 ) && ( func == 0 || func == 3 || func == 2 || func == 4 || func == 6 );
 }
-inline bool Instruction::isBranch(){
+
+inline bool Instruction :: isShiftLogical() const {
+    return ( func == 0 || func == 2 || func == 3 );
+}
+
+inline bool Instruction :: isShiftVariable() const {
+    return (opcode == 0) && ( func == 4 || func == 6 || func == 7 );
+}
+inline bool Instruction::isBranch() const {
     return ( opcode == 4 || opcode == 5 );
 }
 
-inline bool Instruction::isJump(){
+inline bool Instruction::isJump() const{
     return opcode == 2;
 }
 typedef std::map< string, bool> strToBoolMap;
@@ -343,14 +354,31 @@ void initKeyword(){
     ADD_KEYWORD(sw);
     #undef ADD_KEYWORD
 }
-void init( ){
-    opCodeMap["addr"] = ADD;
-    opCodeMap["addi"] = ADDI;
+
+void initRegisters(){
+    regMap["$t0"] = 8;
+    regMap["$t1"] = 9;
+    regMap["$t2"] = 10;
+    regMap["$t3"] = 11;
+    regMap["$t4"] = 12;
+    regMap["$t5"] = 13;
+    regMap["$t6"] = 14;
+    regMap["$t7"] = 15;
+;
     regMap["$s0"] = 16;
     regMap["$s1"] = 17;
     regMap["$s2"] = 18;
     regMap["$s3"] = 19;
+    regMap["$s4"] = 20;
+    regMap["$s5"] = 21;
+    regMap["$s6"] = 22;
+    regMap["$s7"] = 23;
+}
+void init( ){
+    opCodeMap["addr"] = ADD;
+    opCodeMap["addi"] = ADDI;
     initIns();
+    initRegisters();
     digitMap['0'] = 0;
     digitMap['1'] = 1;
     digitMap['2'] = 2;

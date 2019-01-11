@@ -4,9 +4,10 @@ using std::string;
 typedef std::map<string,size_t> strToIndexMap;
 strToIndexMap labelMap; 
 struct ParseObj {
-    Instruction ins;
+    const Instruction ins;
     string insString;
     size_t line;
+    size_t insNumber;
     union {
         struct {
             Integer rs,rt,rd,shamt;
@@ -15,20 +16,34 @@ struct ParseObj {
             Integer rs,rt,addr;
         } Itype;
         struct {
-            Integer rs,rt,offset;
+            Integer rs,rt;
+            mutable Integer offset; // The value is either given by the user or is set during code generation
             const char *label;
         } Branch;
         struct {
-            Integer addr;
+            mutable Integer addr;
             const char *label;
         } Jump;
     } props;
     ParseObj(){}
-    ParseObj ( const Instruction & , string const &, size_t x);
+    ParseObj ( const Instruction & , string const &, size_t x,size_t y);
     ParseObj ( Instruction i, int a , int b = 0, int c = 0, int d = 0 );
     bool validateObj( ParseObj * );
     bool validateObj( const ParseObj &);
     void setRtype(Integer, Integer, Integer);
+    void display() const ;
+    #if 1
+    ~ ParseObj (){
+        if ( ins.insClass == Instruction :: BRTYPE ){
+            if ( props.Branch.label )
+                free( (char *)(props.Branch.label) );
+        } else if ( ins.insClass == Instruction :: JTYPE){
+            if ( props.Jump.label ){
+                free( (char *)( props.Jump.label ) );
+            }
+        }
+    }
+    #endif
     void setItype ( Integer rs, Integer rt, Integer addr ){
         props.Itype.rs = rs;
         props.Itype.rt = rt;
@@ -55,6 +70,37 @@ struct ParseObj {
 
 };
 
+#define print(x) ( std::cout << x )
+#define printl(x) ( std::cout << x << std::endl )
+#define print2l( x, y ) ( std::cout << ( x ) << ( y ) << std::endl )
+void ParseObj :: display () const {
+    std::cout << std:: dec ;
+    print2l( "Instruction :\n" , insString );
+    print2l( "op = ", ins.opcode );
+    if ( ins.insClass == Instruction::RTYPE  ){
+        print2l("rs = ", props.Rtype.rs );
+        print2l("rt = ", props.Rtype.rt );
+        print2l("rd = ", props.Rtype.rd);
+        print2l("shamt = ", props.Rtype.shamt);
+        print2l("func = ", ins.func );
+    } else if ( ins.insClass == Instruction :: ITYPE ){
+        print2l("rs = ", props.Itype.rs );
+        print2l("rt = ", props.Itype.rt );
+        print2l("immediate = ", props.Itype.addr );
+    } else if ( ins.insClass == Instruction :: BRTYPE ){
+        print2l("rs = ",props.Branch.rs );
+        print2l( "rt = ", props.Branch.rt );
+        print2l( "Word offset = ", props.Branch.offset );
+        print2l( "Label name = ", props.Branch.label );
+    } else if ( ins.insClass == Instruction :: JTYPE ) {
+        print2l("Word addres = ",  props.Jump.addr );
+        print2l("Label name = ", props.Jump.label );
+    }
+    printl("");
+}
+#undef print
+#undef printl
+#undef print2l
 void ParseObj::setRtype( Integer reg1, Integer reg2, Integer reg3 ){
     /* 
      * For shift instructions ( sll, srl , sllv, srlv )
@@ -76,7 +122,7 @@ void ParseObj::setRtype( Integer reg1, Integer reg2, Integer reg3 ){
     }
 }
 
-ParseObj :: ParseObj ( const Instruction &i, string const &s, size_t x ): ins(i),insString(s),line(x) {
+ParseObj :: ParseObj ( const Instruction &i, string const &s, size_t x,size_t y ): ins(i),insString(s),line(x),insNumber(y) {
     if ( ins.insClass == Instruction::ITYPE ){
         setItype(0,0,0);
     } else if ( ins.insClass == Instruction :: RTYPE ){
@@ -95,12 +141,8 @@ class Parser {
     string currentStr;
     size_t currentLine;
     bool err;
+    bool parseSuccess;
     size_t insCount;
-    Parser ( const char *p ): instructions( p ),lex(p),err(false),insCount(0){
-        currentStr.reserve(256);
-        lex.next(buff);
-    }
-    ParseObj *parse();
     ParseObj *parseIns( );
     ParseObj *parseRtype();
     ParseObj *parseItype();
@@ -109,16 +151,23 @@ class Parser {
     ParseObj *parseJump();
     int parseRegister();
     int parseInt();
+    void genParseError();
+    void displayError(const char *fmt,...);
+    public:
+    Parser ( const char *p ): instructions( p ),lex(p),err(false),parseSuccess(true),insCount(0){
+        currentStr.reserve(256);
+        lex.next(buff);
+    }
+    inline bool isSuccess(){ return parseSuccess ;}
     void init(const char *p){
         instructions = p;
         lex.init(p);
         lex.next(buff);
         err = false;
     }
-    void genParseError();
-    void displayError(const char *fmt,...);
-    public:
+    ParseObj *parse();
     static void test();
+    inline size_t getInsCount(){ return insCount; }
 };
 
 ParseObj::ParseObj ( Instruction ins, int a, int b, int c , int d){
@@ -141,6 +190,7 @@ ParseObj::ParseObj ( Instruction ins, int a, int b, int c , int d){
 }
 
 void Parser :: displayError(const char *fmt, ... ){
+    parseSuccess = false;
     enum { BUFFER_SIZE = 1024 };
     va_list args;
     va_start( args, fmt );
@@ -172,7 +222,13 @@ int Parser :: parseRegister(){
         err = true;
         displayError("Expected register but instead got \'%s\'.",buff);
     } else if ( !err ){
-        i = regMap[ string ( buff ) ]; 
+        auto regs = regMap.find( string (buff) );
+        if ( regs != regMap.end() ){
+            i = regs->second;
+        } else {
+            err = true;
+            displayError("Invalid register %s.",buff);            
+        }
         lex.next(buff);
     }
     return i;
@@ -192,7 +248,15 @@ int Parser::parseInt(){
 }
 ParseObj *Parser :: parseRtype ( ){
     Integer reg1,reg2,reg3;
-    ParseObj *p = new ParseObj( current, currentStr, currentLine );
+
+    /* 
+     * Only valid instructions are counted by the parser.
+     * i.e The instruction count is only incremented after the parser ( parse() function )
+     * confirms that there is no error.
+     * So, we increase insCount by 1 in advance.
+     * The parseObj p is discarded by the parser if there is an error 
+     */
+    ParseObj *p = new ParseObj( current, currentStr, currentLine,insCount+1 );
     reg1 = parseRegister();
     /* 
      * Sets error to true if we dont get the expected TOKEN.
@@ -202,7 +266,16 @@ ParseObj *Parser :: parseRtype ( ){
     err = !lex.expect( Lexer:: TOKEN_COMMA, buff );
     reg2 = parseRegister();
     err = !lex.expect( Lexer :: TOKEN_COMMA ,buff );
-    reg3 = parseRegister();
+
+    /* There are two types of shifting operations
+     * The logical shift takes an integer value as an argument for its 'shamt' field
+     * The variable shift, like other R-type instructions take a register for its 'rs' field, the shamt field is ignored
+     */
+    if ( current.isShiftLogical() ){
+        reg3 = parseInt();
+    } else {
+        reg3 = parseRegister();
+    }
     if ( err ){
         displayError("Invalid arguments to the instruction \'%s\'.",current.str.c_str());
     }else if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE, buff) ){
@@ -215,7 +288,7 @@ ParseObj *Parser :: parseRtype ( ){
 
 ParseObj *Parser :: parseItype ( ){
     Integer rs,rt,addr;
-    ParseObj *p =  new ParseObj (current, currentStr, currentLine);
+    ParseObj *p =  new ParseObj (current, currentStr, currentLine, insCount + 1);
     rt = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA, buff);
     rs = parseRegister();
@@ -231,7 +304,7 @@ ParseObj *Parser :: parseItype ( ){
 
 ParseObj *Parser::parseLS(){
     Integer rs,rt,off;
-    ParseObj *p = new ParseObj ( current, currentStr , currentLine);
+    ParseObj *p = new ParseObj ( current, currentStr , currentLine, insCount + 1);
     rt = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff);
     off = parseInt();
@@ -248,20 +321,20 @@ ParseObj *Parser::parseLS(){
 
 ParseObj *Parser::parseBranch(){
     Integer rs,rt,offset;
-    ParseObj *p = new ParseObj(current, currentStr, currentLine );
+    ParseObj *p = new ParseObj(current, currentStr, currentLine, insCount + 1 );
     rs = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff);
     rt = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff);
     if ( lex.isToken(Lexer::TOKEN_NAME) ){
-        const char *str = strdup( buff );
+        const char *str = strdup( buff ); // TODO: replace strdup with something more useful
         p->setBranch(rs,rt,str);
     } else if ( lex.isToken( Lexer::TOKEN_INT ) ){
         offset = lex.getInt();
         p->setBranch( rs, rt, offset );
-    } else {
+    } else if ( !err ) {
         err = true;
-        displayError("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
+        displayError("Expected jump offset (integer) or Label name. Got \'%s\' instead.",buff);
     }
     lex.next(buff);
     if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE,buff) ){
@@ -272,7 +345,7 @@ ParseObj *Parser::parseBranch(){
 }
 
 ParseObj *Parser::parseJump(){
-    ParseObj *p = new ParseObj(current,currentStr, currentLine);
+    ParseObj *p = new ParseObj(current,currentStr, currentLine, insCount + 1);
     if ( lex.isToken(Lexer::TOKEN_NAME) ){
         const char *str = strdup(buff);
         p->setJump(str);
@@ -332,8 +405,10 @@ ParseObj* Parser::parse( ){
             // We were able to find a valid instruction
             insCount++;
             return p;
-        }
+        } 
+          
         // We reached end of string before finding a valid instruction
+        delete p;
         return nullptr;
     } else if ( lex.isToken(Lexer::TOKEN_NAME) ) {
         // The token has to be a label, else we display error
@@ -345,7 +420,7 @@ ParseObj* Parser::parse( ){
             displayError("Unidentified instruction \'%s\'.",str.c_str() );
             lex.nextInstruction(buff);
         } else {
-            labelMap[str] = insCount+1;
+            labelMap[str] = insCount;
         }
         return parse();
     } else if (lex.isToken(Lexer::TOKEN_END)){
