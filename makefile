@@ -1,3 +1,4 @@
+$(shell mkdir -p bin )
 DIRECTORY = $(shell pwd)
 INCLUDE = $(DIRECTORY)/include
 BIN = $(DIRECTORY)/bin
