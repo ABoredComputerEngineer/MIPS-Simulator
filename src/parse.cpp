@@ -1,75 +1,45 @@
-#include <cstring>
-#include <string>
-using std::string;
-typedef std::map<string,size_t> strToIndexMap;
+#include "../include/common.hpp"
+#include "../include/lex.hpp"
+#include "../include/parse.hpp"
 strToIndexMap labelMap; 
-struct ParseObj {
-    const Instruction ins;
-    string insString;
-    size_t line;
-    size_t insNumber;
-    union {
-        struct {
-            Integer rs,rt,rd,shamt;
-        } Rtype;
-        struct {
-            Integer rs,rt,addr;
-        } Itype;
-        struct {
-            Integer rs,rt;
-            mutable Integer offset; // The value is either given by the user or is set during code generation
-            const char *label;
-        } Branch;
-        struct {
-            mutable Integer addr;
-            const char *label;
-        } Jump;
-    } props;
-    ParseObj(){}
-    ParseObj ( const Instruction & , string const &, size_t x,size_t y);
-    ParseObj ( Instruction i, int a , int b = 0, int c = 0, int d = 0 );
-    bool validateObj( ParseObj * );
-    bool validateObj( const ParseObj &);
-    void setRtype(Integer, Integer, Integer);
-    void display() const ;
-    #if 1
-    ~ ParseObj (){
-        if ( ins.insClass == Instruction :: BRTYPE ){
-            if ( props.Branch.label )
-                free( (char *)(props.Branch.label) );
-        } else if ( ins.insClass == Instruction :: JTYPE){
-            if ( props.Jump.label ){
-                free( (char *)( props.Jump.label ) );
-            }
+using std::string;
+ParseObj::~ParseObj (){
+    if ( ins.insClass == Instruction :: BRTYPE ){
+        if ( props.Branch.label )
+            free( (char *)(props.Branch.label) );
+    } else if ( ins.insClass == Instruction :: JTYPE){
+        if ( props.Jump.label ){
+            free( (char *)( props.Jump.label ) );
         }
     }
-    #endif
-    void setItype ( Integer rs, Integer rt, Integer addr ){
-        props.Itype.rs = rs;
-        props.Itype.rt = rt;
-        props.Itype.addr = addr;
-    }
-    void setBranch( Integer rs, Integer rt, const char *s ){
-        props.Branch.rs = rs;
-        props.Branch.rt = rt;
-        props.Branch.label = s;
-        props.Branch.offset = 0;
-    }
-    void setBranch( Integer rs, Integer rt, Integer off ){
-        props.Branch.rs = rs;
-        props.Branch.rt = rt;
-        props.Branch.offset = off;
-        props.Branch.label = nullptr;
-    }
-    void setJump( Integer address ){
-        props.Jump.addr = address;
-    }
-    void setJump( const char *s ){
-        props.Jump.label = s;
-    }
+}
+void ParseObj::setItype ( Integer rs, Integer rt, Integer addr ){
+    props.Itype.rs = rs;
+    props.Itype.rt = rt;
+    props.Itype.addr = addr;
+}
 
-};
+void ParseObj::setBranch( Integer rs, Integer rt, const char *s ){
+    props.Branch.rs = rs;
+    props.Branch.rt = rt;
+    props.Branch.label = s;
+    props.Branch.offset = 0;
+}
 
+void ParseObj::setBranch( Integer rs, Integer rt, Integer off ){
+    props.Branch.rs = rs;
+    props.Branch.rt = rt;
+    props.Branch.offset = off;
+    props.Branch.label = nullptr;
+}
+
+void ParseObj::setJump( Integer address ){
+    props.Jump.addr = address;
+}
+
+void ParseObj::setJump( const char *s ){
+    props.Jump.label = s;
+}
 #define print(x) ( std::cout << x )
 #define printl(x) ( std::cout << x << std::endl )
 #define print2l( x, y ) ( std::cout << ( x ) << ( y ) << std::endl )
@@ -133,43 +103,6 @@ ParseObj :: ParseObj ( const Instruction &i, string const &s, size_t x,size_t y 
         props.Jump.addr = 0; props.Jump.label = nullptr;
     }
 }
-class Parser {
-    const char *instructions;
-    Lexer lex;
-    char buff[256];
-    Instruction current;
-    string currentStr;
-    size_t currentLine;
-    bool err;
-    bool parseSuccess;
-    size_t insCount;
-    ParseObj *parseIns( );
-    ParseObj *parseRtype();
-    ParseObj *parseItype();
-    ParseObj *parseLS();
-    ParseObj *parseBranch();
-    ParseObj *parseJump();
-    int parseRegister();
-    int parseInt();
-    void genParseError();
-    void displayError(const char *fmt,...);
-    public:
-    Parser ( const char *p ): instructions( p ),lex(p),err(false),parseSuccess(true),insCount(0){
-        currentStr.reserve(256);
-        lex.next(buff);
-    }
-    inline bool isSuccess(){ return parseSuccess ;}
-    void init(const char *p){
-        instructions = p;
-        lex.init(p);
-        lex.next(buff);
-        err = false;
-    }
-    ParseObj *parse();
-    static void test();
-    inline size_t getInsCount(){ return insCount; }
-};
-
 ParseObj::ParseObj ( Instruction ins, int a, int b, int c , int d){
     if ( ins.insClass == Instruction :: RTYPE ){
         props.Rtype.rs = a;
@@ -189,6 +122,22 @@ ParseObj::ParseObj ( Instruction ins, int a, int b, int c , int d){
     }
 }
 
+
+/*
+ * PARSER CODE BEGINS HERE
+ */
+
+Parser:: Parser ( const char *p ): instructions( p ),lex(p),err(false),parseSuccess(true),insCount(0){
+    currentStr.reserve(256);
+    lex.next(buff);
+}
+
+void Parser::init(const char *p){
+    instructions = p;
+    lex.init(p);
+    lex.next(buff);
+    err = false;
+}
 void Parser :: displayError(const char *fmt, ... ){
     parseSuccess = false;
     enum { BUFFER_SIZE = 1024 };

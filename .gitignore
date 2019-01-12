@@ -68,6 +68,8 @@
 # Build and run scripts
 run
 
+# bin files generated as assembler output
+*.bin
 #dump directory
 dump/
 # GDB files

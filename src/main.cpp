@@ -1,14 +1,18 @@
+#include <cstddef>
+#include <vector>
 #include <cstdarg>
 #include <cstdlib>
 #include <iostream>
-#include <string>
-#include <cctype>
-#include <map>
 #include <fstream>
+#include <string>
+using std::vector;
+using std::string;
+#include "../include/common.hpp"
+#include "../include/lex.hpp"
+#include "../include/parse.hpp"
+#include "../include/gen.hpp"
+
 #define ERR_BUFF_SIZE 1024
-#include "lex.cpp"
-#include "parse.cpp"
-#include "gen.cpp"
 
 char *errBuff;
 char *formatErr( const char *fmt, ... ){
