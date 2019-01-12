@@ -68,6 +68,8 @@
 # Build and run scripts
 run
 
+#dump directory
+dump/
 # GDB files
 *gdb*
 # End of https://www.gitignore.io/api/c++,linux,visualstudiocode

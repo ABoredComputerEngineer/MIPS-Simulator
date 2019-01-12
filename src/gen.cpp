@@ -1,6 +1,19 @@
 #include <vector>
 #include <cstdint>
 #include <cassert>
+extern  char *errBuff;
+extern char *formatErr(const char *,...);
+// FileException class will be moved to another file
+struct FileException {
+    private:
+    string str;
+    public:
+    FileException ( const char *s ): str( s ){}
+    FileException ( const string &s ): str( s ){}
+    const char *getError( ){
+        return str.c_str();
+    }  
+};
 // TODO : Maybe not use std::vector?
 typedef int32_t Code;
 #define ORIGIN 80000 
@@ -33,28 +46,31 @@ class Generator {
     vector <ParseObj *> objs;
     const char *file;
     bool parseSuccess;
+    bool genSuccess;
     size_t totalIns;
     Code encodeRtype(const ParseObj *);
     Code encodeItype( const ParseObj *);
     Code encodeBranch( const ParseObj *);
     Code encodeJump( const ParseObj *);
     Code encodeObj( const ParseObj * );
-    bool parseFile();
-    void encode();
     void displayError(const ParseObj *,const char *fmt,...);
     bool resolveBranch(const ParseObj *);
     bool resolveJump(const ParseObj *);
+    public:
+    Generator (const char *f ):file(f),parseSuccess(false),genSuccess(false),totalIns(0){
+        prog.reserve( 100 );
+        objs.reserve( 100 );
+    }
     ~Generator () {
         for ( auto iter = objs.begin(); iter != objs.end(); iter++ ){
             delete *iter;
         }
     }
-    public:
-    Generator (const char *f ):file(f),parseSuccess(0),totalIns(0){
-        prog.reserve( 100 );
-        objs.reserve( 100 );
-    }
+    bool parseFile();
+    bool encode();
     static void test();
+    void generateFile(const char *path);
+    void generateFile(const string &path);
 };
 
 
@@ -123,6 +139,7 @@ bool Generator :: resolveJump(const ParseObj *p){
 
 void Generator:: displayError(const ParseObj *p,const char *fmt, ... ){
     parseSuccess = false;
+    genSuccess = false;
     enum { BUFFER_SIZE = 1024 };
     va_list args;
     va_start( args, fmt );
@@ -219,7 +236,7 @@ Code Generator::encodeObj( const ParseObj *p){
     std::cerr << "Invalid Object!" << std::endl;
     return 0;
 }
-void Generator :: encode () {
+bool Generator :: encode () {
     for ( auto iter = objs.begin(); iter != objs.end() ; iter ++ ){
         Code code;
         ParseObj *p = *iter; 
@@ -242,6 +259,7 @@ void Generator :: encode () {
         }
         prog.push_back(code);
     }
+    return genSuccess;
 }
 
 bool Generator :: parseFile () {
@@ -258,6 +276,24 @@ bool Generator :: parseFile () {
     }
     totalIns = p.getInsCount();
     return p.isSuccess();
+}
+
+void Generator :: generateFile(const char *path){
+    string s( (path)?path:"test.bin" );
+    std::ofstream outFile( s, std::ofstream::out | std::ofstream::binary );
+    if ( !outFile.is_open() || !outFile.good() ){
+        const char *msg = strerror( errno );
+        throw FileException( formatErr("Error! Cannot generate output file \'%s\':%s",s.c_str(),msg) );
+        return;
+    }
+    size_t bytes = prog.size() * sizeof(Code); // size of the file that will be generated
+    Code *data = prog.data();
+    outFile.write(reinterpret_cast<char *>( data ), bytes );
+    if ( outFile.bad() ){
+        const char *msg = strerror( errno );
+        throw FileException( formatErr("Error! Cannot write to file \'%s\'. %s",s,msg) );
+    }
+    outFile.close();
 }
 
 void Generator :: test (){
