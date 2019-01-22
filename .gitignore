@@ -72,6 +72,8 @@ run
 *.bin
 #dump directory
 dump/
+*.dump
+*callgrind*
 # GDB files
 *gdb*
 # End of https://www.gitignore.io/api/c++,linux,visualstudiocode

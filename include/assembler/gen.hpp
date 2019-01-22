@@ -4,7 +4,7 @@
 #include <vector>
 #include <fstream>
 typedef int32_t Code;
-#define ORIGIN 80000 
+#define ORIGIN 00000 
 enum Limits {
     RS_LEN = 5,
     RT_LEN = 5,
@@ -53,6 +53,7 @@ class Generator {
     static void test();
     void generateFile(const char *path);
     void generateFile(const std::string &path); // TODO
+    void displayObjs();
 };
 
 extern  char *errBuff; // defined in main.cpp

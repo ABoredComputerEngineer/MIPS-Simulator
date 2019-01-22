@@ -1,5 +1,5 @@
-#include "../include/common.hpp"
-#include "../include/lex.hpp"
+#include "common.hpp"
+#include "lex.hpp"
 using std::string;
 Lexer :: Lexer ( const char *x ): stream( x ),line_start(x),line(1){
     str.reserve(256);

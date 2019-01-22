@@ -1,7 +1,7 @@
-#include "../include/common.hpp"
-#include "../include/lex.hpp"// for the parser
-#include "../include/parse.hpp"
-#include "../include/gen.hpp"
+#include "common.hpp"
+#include "lex.hpp"// for the parser
+#include "parse.hpp"
+#include "gen.hpp"
 using std::vector;
 using std::string;
 // FileException class will be moved to another file
@@ -239,6 +239,12 @@ void Generator :: generateFile(const char *path){
     outFile.close();
 }
 
+void Generator :: displayObjs(){
+    for ( size_t i = 0; i < objs.size() ; i++ ){
+        std::cout<<"Instruction Code: "<< std::endl << "0x"<< std::hex << prog[i] << std::endl;
+        objs[i]->display();
+    }
+}
 void Generator :: test (){
     assert( IS_SIGNED_16( -8 ) );
     assert( IS_SIGNED_16( 123 ) );

@@ -1,4 +1,4 @@
-#include "../include/common.hpp"
+#include "common.hpp"
 using std::string;
 strToBoolMap keywordMap;
 strToInsMap insMap;
@@ -20,7 +20,7 @@ void initIns( ){
     ADD_INSR(and,36,AL);
     ADD_INSR(or,37,AL);
     ADD_INSR(xor,38,AL);
-    ADD_INSR(xnor,39,AL);
+    ADD_INSR(nor,39,AL);
     ADD_INSR(slt,42,AL);
     ADD_INSR(sltu,43,AL);
 
@@ -83,6 +83,15 @@ void initKeyword(){
 }
 
 void initRegisters(){
+    regMap["$zero"] = 0;
+    regMap["$at"] = 1;
+    regMap["$v0"] = 2;
+    regMap["$v1"] = 3;
+    regMap["$a0"] = 4;
+    regMap["$a1"] = 5;
+    regMap["$a2"] = 6;
+    regMap["$a3"] = 7;
+
     regMap["$t0"] = 8;
     regMap["$t1"] = 9;
     regMap["$t2"] = 10;
@@ -91,7 +100,7 @@ void initRegisters(){
     regMap["$t5"] = 13;
     regMap["$t6"] = 14;
     regMap["$t7"] = 15;
-;
+
     regMap["$s0"] = 16;
     regMap["$s1"] = 17;
     regMap["$s2"] = 18;
@@ -100,6 +109,16 @@ void initRegisters(){
     regMap["$s5"] = 21;
     regMap["$s6"] = 22;
     regMap["$s7"] = 23;
+
+    regMap["$t8"] = 24;
+    regMap["$t9"] = 25;
+    regMap["$k0"] = 26;
+    regMap["$k1"] = 27;
+
+    regMap["$gp"] = 28;
+    regMap["$sp"] = 29;
+    regMap["$fp"] = 30;
+    regMap["$ra"] = 31;
 }
 void init( ){
     initIns();

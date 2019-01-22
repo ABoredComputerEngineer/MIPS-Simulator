@@ -1,6 +1,6 @@
-#include "../include/common.hpp"
-#include "../include/lex.hpp"
-#include "../include/parse.hpp"
+#include "common.hpp"
+#include "lex.hpp"
+#include "parse.hpp"
 strToIndexMap labelMap; 
 using std::string;
 ParseObj::~ParseObj (){
@@ -371,6 +371,7 @@ ParseObj* Parser::parse( ){
         } else {
             labelMap[str] = insCount;
         }
+        lex.match(Lexer::TOKEN_NEWLINE,buff);
         return parse();
     } else if (lex.isToken(Lexer::TOKEN_END)){
         return nullptr;

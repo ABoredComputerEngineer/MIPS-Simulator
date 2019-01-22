@@ -8,25 +8,48 @@ CXX = g++
 
 
 CXXFLAGS = -std=c++11 -Wall -Werror
-DEBUG_FLAG = -g3 -gdwarf-2
+DEBUG=-g3 -gdwarf-2
 
-DEPENDENCIES = $(BIN)/main.o $(BIN)/gen.o $(BIN)/parse.o $(BIN)/lex.o $(BIN)/common.o
+# =======================================================================
+# | RULES FOR MAKING THE ASSEMBLER |
+# =======================================================================
+# ALL THE VARIABLES FOR MAKING THE ASSEMBLER START WITH 'ASM' PREFIX
+#
 
-COMMON_HEADER = $(INCLUDE)/common.hpp
-LEX_HEADER = $(COMMON_HEADER) $(INCLUDE)/lex.hpp
-PARSE_HEADER = $(LEX_HEADER) $(INCLUDE)/parse.hpp
-GEN_HEADER = $(PARSE_HEADER) $(INCLUDE)/gen.hpp
-MAIN_HEADER = $(GEN_HEADER)
-assembler: $(DEPENDENCIES) 
-		$(CXX) -o $(BIN)/assembler $(DEPENDENCIES) $(DEBUG+FLAG)
+ASMINCLUDE = $(INCLUDE)/assembler
+ASMDEPENDENCIES = $(BIN)/main.o $(BIN)/gen.o $(BIN)/parse.o $(BIN)/lex.o $(BIN)/common.o
+ASMSRC = $(SRC)/assembler
+assembler: $(ASMDEPENDENCIES) 
+		$(CXX) $(ASMDEPENDENCIES) $(DEBUG) -o $(BIN)/assembler 
 
-$(BIN)/main.o: $(SRC)/main.cpp $(MAIN_HEADER)
-		$(CXX) $(CXXFLAGS) -c $(SRC)/main.cpp $(DEBUG_FLAG) -o $(BIN)/main.o
-$(BIN)/gen.o: $(SRC)/gen.cpp $(GEN_HEADER)
-		$(CXX) $(CXXFLAGS) -c $(SRC)/gen.cpp $(DEBUG_FLAG) -o $(BIN)/gen.o
-$(BIN)/parse.o: $(SRC)/parse.cpp $(PARSE_HEADER)
-		$(CXX) $(CXXFLAGS) -c $(SRC)/parse.cpp $(DEBUG_FLAG) -o $(BIN)/parse.o
-$(BIN)/lex.o: $(SRC)/lex.cpp $(LEX_HEADER)
-		$(CXX) $(CXXFLAGS) -c $(SRC)/lex.cpp $(DEBUG_FLAG) -o $(BIN)/lex.o
-$(BIN)/common.o: $(SRC)/common.cpp $(COMMON_HEADER)
-		$(CXX) $(CXXFLAGS) -c $(SRC)/common.cpp $(DEBUG_FLAG) -o $(BIN)/common.o
+$(BIN)/main.o: $(ASMSRC)/main.cpp
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/main.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/main.o
+$(BIN)/gen.o: $(ASMSRC)/gen.cpp 
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/gen.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/gen.o
+$(BIN)/parse.o: $(ASMSRC)/parse.cpp 
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/parse.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/parse.o
+$(BIN)/lex.o: $(ASMSRC)/lex.cpp 
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/lex.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/lex.o
+$(BIN)/common.o: $(ASMSRC)/common.cpp 
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/common.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/common.o
+
+# =======================================================================
+# | RULES FOR MAKING THE VM |
+# =======================================================================
+# ALL THE VARIABLES FOR MAKING THE VM START WITH 'VM' PREFIX
+#
+
+VMINCLUDE = $(INCLUDE)/VM
+VMOBJS = $(BIN)/vm.o $(BIN)/printBuffer.o $(BIN)/functions.o
+VMSRC = $(SRC)/VM
+vm: $(VMOBJS)
+	$(CXX) $(VMOBJS) $(DEBUG) -o $(BIN)/vm
+$(BIN)/vm.o: $(VMSRC)/vm.cpp
+	$(CXX) $(CXXFLAGS) -c $(VMSRC)/vm.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vm.o
+$(BIN)/printBuffer.o: $(VMSRC)/printBuffer.cpp
+	$(CXX) $(CXXFLAGS) -c $(VMSRC)/printBuffer.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/printBuffer.o
+$(BIN)/functions.o: $(VMSRC)/printBuffer.cpp
+	$(CXX) $(CXXFLAGS) -c $(VMSRC)/functions.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/functions.o
+
+clean:
+	rm -rf $(BIN)/*
