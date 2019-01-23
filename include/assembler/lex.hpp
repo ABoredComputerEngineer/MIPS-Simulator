@@ -50,6 +50,6 @@ struct Lexer{
 };
 inline bool Lexer::isIns(){ return kind == TOKEN_INSTRUCTION; }
 inline bool Lexer::isToken( TokenKind k ){ return kind == k; }
-extern charToIntMap digitMap;
-extern strToBoolMap keywordMap;
+extern charToIntMap digitMap; // defined in common.cpp 
+extern strToBoolMap keywordMap; // defined in common.cpp
 #endif

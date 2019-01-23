@@ -70,6 +70,6 @@ class Parser {
     inline size_t getInsCount(){ return insCount; }
 };
 
-extern strToIntMap regMap;
-extern strToInsMap insMap; 
+extern strToIntMap regMap; // defined in common.cpp
+extern strToInsMap insMap;  // defined in common.cpp
 #endif

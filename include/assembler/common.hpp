@@ -8,7 +8,7 @@
 #define COMMON_HPP
 #include <iostream>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <cstdarg>
 #include <cstdint>
 #include <cassert>
@@ -62,11 +62,11 @@ inline bool Instruction::isJump() const{
     return opcode == 2;
 }
 
-typedef std::map< std::string, bool> strToBoolMap;
-typedef std::map< std::string , Instruction > strToInsMap;
-typedef std::map< std::string ,Integer > strToIntMap;
-typedef std::map< char , int > charToIntMap;
-typedef std::map<std::string,size_t> strToIndexMap;
+typedef std::unordered_map< std::string, bool> strToBoolMap;
+typedef std::unordered_map< std::string , Instruction > strToInsMap;
+typedef std::unordered_map< std::string ,Integer > strToIntMap;
+typedef std::unordered_map< char , int > charToIntMap;
+typedef std::unordered_map<std::string,size_t> strToIndexMap;
 
 struct FileException {
     private:

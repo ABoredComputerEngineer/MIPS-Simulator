@@ -3,7 +3,7 @@
 #define GEN_HPP
 #include <vector>
 #include <fstream>
-typedef int32_t Code;
+typedef uint32_t Code;
 #define ORIGIN 00000 
 enum Limits {
     RS_LEN = 5,
@@ -58,5 +58,5 @@ class Generator {
 
 extern  char *errBuff; // defined in main.cpp
 extern char *formatErr(const char *,...); // defined in main.cpp
-extern strToIndexMap labelMap;
+extern strToIndexMap labelMap; // defined in parse.cpp
 #endif
