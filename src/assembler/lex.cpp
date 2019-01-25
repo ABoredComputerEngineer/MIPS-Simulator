@@ -77,9 +77,21 @@ void Lexer::nextInstruction(char *buff){
         next(buff);
     }
 }
+#define ADD_SIMPLE_TOKEN(k)\
+                    do {\
+                      kind = (k);\
+                      *buff++ = *stream++;\
+                      *buff = 0;\
+                    }while( 0 )
 
 void Lexer :: next (char *buff){
     switch ( *stream ){
+        case '#': // '#' is going to denote start of a line comment
+            while ( *stream != '\n' )
+                stream++;
+            stream++;
+            next(buff);
+            break;
         case '\n': case '\t': case '\r': case ' ':
             while ( isspace( *stream ) ){
                 if ( *stream == '\n' ){
@@ -147,11 +159,73 @@ void Lexer :: next (char *buff){
             *buff++ = *stream++;
             *buff = 0;
             break;
+        case '+':
+            ADD_SIMPLE_TOKEN(TOKEN_ADD);
+            break;
+        case '-':
+            ADD_SIMPLE_TOKEN(TOKEN_SUB);
+            break;
+        case '*':
+            ADD_SIMPLE_TOKEN(TOKEN_MUL);
+            break;
+        case '/':
+            ADD_SIMPLE_TOKEN(TOKEN_DIV);
+            break;
+        case '&':
+            ADD_SIMPLE_TOKEN(TOKEN_BAND);
+            break;
+        case '|':
+            ADD_SIMPLE_TOKEN(TOKEN_BOR);
+            break;
+        case '^':
+            ADD_SIMPLE_TOKEN(TOKEN_BXOR);
+            break;
+        case '!':
+            ADD_SIMPLE_TOKEN(TOKEN_NOT);
+            break;
+        case '~':
+            ADD_SIMPLE_TOKEN(TOKEN_COMPLEMENT);
+            break;
+        case '>':
+            *buff++ = *stream++; 
+            if ( *stream != '>' ){
+                std::cerr << "At line: " << currentPos().row << std::endl;
+                std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
+                while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
+                    stream++;
+                }
+                kind = TOKEN_BAD;
+                return;
+            }
+            *buff++ = *stream++; *buff = 0;
+            kind = TOKEN_RSHIFT;
+            break;
+        case '<':
+            *buff++ = *stream++; 
+            if ( *stream != '<' ){
+                std::cerr << "At line: " << currentPos().row << std::endl;
+                std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
+                while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
+                    stream++;
+                }
+                kind = TOKEN_BAD;
+                return;
+            } else {
+                *buff++ = *stream++; *buff = 0;
+                kind = TOKEN_LSHIFT;
+            }
+            break;
         case 0:
             kind = TOKEN_END;
             break;
         default:
-            std::cerr << "Unidentified token !" << std::endl;
+            std::cerr << "At line: " << currentPos().row << std::endl;
+            std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
+            kind = TOKEN_BAD;
+            while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
+                stream++;
+            }
+            return;
             break;
     }
 }
@@ -202,5 +276,20 @@ void Lexer :: test (){
     TEST_EQ(n.int_val,10,"Failed to scan octal integer");
     n.next(buffer);
     TEST_EQ(n.int_val,0,"Failed to scan zero value!");
+    s = "+ - >> << | & ~ / * !";
+    n.init(s.c_str()); n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_ADD,"Failed to scan Add operator"); n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_SUB,"Failed to scan Subtract operator"); n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_RSHIFT,"Failed to scan rshift operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_LSHIFT,"Failed to scan lshift operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_BOR,"Failed to scan bor operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_BAND,"Failed to scan band operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_COMPLEMENT,"Failed to scan complement operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_DIV,"Failed to scan division operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_MUL,"Failed to scan multiply operator");n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_NOT,"Failed to scan not operator");n.next(buffer);
+    s = "#1234591234\n 1234";
+    n.init(s.c_str()); n.next(buffer);
+    TEST_EQ(n.kind,TOKEN_INT,"Failed to scan comments");
 }
 #undef TEST_EQ

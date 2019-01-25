@@ -3,6 +3,7 @@
 #include "parse.hpp"
 strToIndexMap labelMap; 
 using std::string;
+#define UNIT 0
 ParseObj::~ParseObj (){
     if ( ins.insClass == Instruction :: BRTYPE ){
         if ( props.Branch.label )
@@ -61,10 +62,12 @@ void ParseObj :: display () const {
         print2l("rs = ",props.Branch.rs );
         print2l( "rt = ", props.Branch.rt );
         print2l( "Word offset = ", props.Branch.offset );
-        print2l( "Label name = ", props.Branch.label );
+        if ( props.Branch.label ){
+            print2l( "Label name = ", props.Branch.label );
+        }
     } else if ( ins.insClass == Instruction :: JTYPE ) {
-        print2l("Word addres = ",  props.Jump.addr );
-        print2l("Label name = ", props.Jump.label );
+        print2l("Word address = ",  props.Jump.addr );
+        if( props.Jump.label ){ print2l("Label name = ", props.Jump.label ); }
     }
     printl("");
 }
@@ -185,6 +188,8 @@ int Parser :: parseRegister(){
 
 
 int Parser::parseInt(){
+    return parseExpr();
+    #if 0
     int i = 0;
     if ( lex.isToken(Lexer::TOKEN_INT) ){
         i = lex.getInt(); 
@@ -194,6 +199,7 @@ int Parser::parseInt(){
         displayError("Expected integer value as an argument. Got \'%s\' instead.",buff);
     }
     return i;
+    #endif
 }
 ParseObj *Parser :: parseRtype ( ){
     Integer reg1,reg2,reg3;
@@ -382,6 +388,131 @@ ParseObj* Parser::parse( ){
 }
 
 
+/*
+ * =============================================
+ * | Expression Parsing Code | 
+ * =============================================
+ * We only support following classes of operations:
+ * addition, subtractions, multiply,
+ * division, bitwise operations
+ * The precedence order is similar to C.
+ * Only difference is that bitwise - operations have
+ * same precedence as that of muliply and division
+ * So, 1 >> 2 + 3 == ( 1 >> 2 ) + 3
+ *     1 + 2 & 3 == 1 + ( 2 & 3 )
+ * and so on
+ * The expression grammar is :
+ * Expr =  add_expr
+ * add_expr = mul_expr ( mul_expr add_op mul_expr )*
+ * mul_expr = unary_expr ( unary_expr mul_op unary_expr )*
+ * unary_expr = base_expr | unary_op unary_expr
+ * base_expr = NUMBER | ( expr )
+ * add_op = ( +, - )
+ * mul_op = ( / , * , << , >> , | , & , ^ )
+ * unary_op = ( -, !, ~)
+ * Here, * denotes zero or more repititions
+ */
+
+int performBinaryOp( Lexer::TokenKind op, int a, int b = 0){
+    /*
+     * The default argument b allows us to use this function 
+     * to evaluate unary operations without specifying two 
+     * arguments. This function does NOT handle unary minus and 
+     * so must be handled explicitly
+     */
+    switch ( op ){
+        case Lexer::TOKEN_ADD:
+            return a+b; break;
+        case Lexer::TOKEN_SUB:
+            return a-b; break;
+        case Lexer::TOKEN_MUL:
+            return a*b; break;
+        case Lexer::TOKEN_DIV:
+            return a/b; break;
+        case Lexer::TOKEN_LSHIFT:
+            return a<<b; break;
+        case Lexer::TOKEN_RSHIFT:
+            return a>>b; break;
+        case Lexer::TOKEN_BAND:
+            return a&b; break;
+        case Lexer::TOKEN_BOR:
+            return a|b; break;
+        case Lexer::TOKEN_BXOR:
+            return a^b; break;
+        default:
+            std::cerr << "Invalid Operator " << op << std::endl;
+            return 0;
+            break;
+
+    }
+}
+
+int performUnaryOp( Lexer::TokenKind k , int a ){
+    switch  ( k ){
+        case Lexer::TOKEN_SUB:
+            return -a; break;
+        case Lexer::TOKEN_COMPLEMENT:
+            return ~a; break;
+        case Lexer::TOKEN_NOT:
+            return !a; break;
+        default:
+            std::cerr << "Invlid operator " << k << std::endl;
+            break;
+    }
+    return 0;
+}
+
+int Parser::parseBaseExpr(){
+    if ( lex.isToken(Lexer::TOKEN_INT) ){
+        int val = lex.int_val;
+        lex.next(buff);
+        return val;
+    } else if ( lex.match(Lexer::TOKEN_LPAREN,buff) ){
+        int val = parseExpr();
+        lex.expect(Lexer::TOKEN_RPAREN,buff);
+        return val;
+    } else {
+        err = true;
+        displayError("Invalid token %s in an expression",buff);
+        return 0;
+    } 
+}
+
+int Parser::parseUnaryExpr(){
+    if ( lex.isUnaryOp() && !err ){
+        Lexer::TokenKind op = lex.kind;
+        lex.next(buff);
+        int val = parseUnaryExpr();
+        return performUnaryOp(op,val);
+    } else if ( !err ) {
+        return parseBaseExpr();
+    }
+    return 0;
+    
+}
+int Parser::parseMulExpr(){
+    int val = parseUnaryExpr();
+    while ( lex.isMulOp() && !err ){
+        Lexer::TokenKind op = lex.kind;
+        lex.next(buff);
+        int rval = parseMulExpr();
+        val = performBinaryOp(op,val,rval);
+    }
+    return val;
+}
+int Parser::parseAddExpr(){
+    int val = parseMulExpr();
+    while ( lex.isAddOp() && !err ){
+        Lexer::TokenKind op = lex.kind;
+        lex.next(buff);
+        int rval = parseMulExpr();
+        val = performBinaryOp(op,val,rval);
+    }
+    return val;
+}
+int Parser::parseExpr(){
+    return parseAddExpr();
+}
 
 #define TEST_EQ(x,y,msg)\
     do {\
@@ -391,6 +522,28 @@ ParseObj* Parser::parse( ){
             std::cerr << msg << std::endl;\
         }\
     } while ( 0 )
+
+
+void Parser::exprTest(){
+    #define TEST_EXPR(x) \
+        do {\
+            Parser p(#x);\
+            int result = p.parseExpr();\
+            if ( (x) != result ){\
+                std::cerr << "Incorrect expression evaluation for expression " << std::endl;\
+            }\
+            std::cerr<< #x << " == " << x << std::endl;\
+        } while (0)
+    
+    TEST_EXPR(2+3);
+    TEST_EXPR( 2 + 3 * 2 );
+    TEST_EXPR( (2+3) * 2 );
+    TEST_EXPR( -2 + 3 );
+    TEST_EXPR( -2 - 3 - 4 );
+    TEST_EXPR( !2 * 32 );
+    TEST_EXPR( 2 + -3 * ~2 );
+    #undef TEST_EXPR
+}
 
 
 bool ParseObj :: validateObj( ParseObj *p ){
@@ -443,6 +596,7 @@ bool ParseObj :: validateObj( const ParseObj &p ){
 }
 #define NEW_INS(NAME,OP,FUNC,KIND,CLASS) ( Instruction ( string (#NAME), OP, FUNC, Instruction::KIND, Instruction::CLASS) ) 
 void Parser::test(){
+    exprTest();
     string str("addr $s0,$s1\n"\
                 "      Label:\n"\
                "addi $s0,$s1,ab\n"\
@@ -451,8 +605,10 @@ void Parser::test(){
                "   sw $s0,0($s1)\n"\
                "garbage $s0,$s1,$s3\n"\
                "Exit:"\
+               "addi $t0,$t1,0x3?b4\n"\
                "beq $s0,$s1,Exit\n"\
                "beq $s0,$s1,0x10\n"\
+               "addi $s0,$s1,3+4*5\n"\
                "jmp 0x10\n"\
                "jmp Exit");
 #if 0
@@ -487,12 +643,22 @@ void Parser::test(){
 // Parses everything in the test string displaying appropiate errors
     Parser q(str.c_str());
     ParseObj *obj = q.parse();
+    obj->display();
     do {
         delete obj;
         obj = q.parse();
+        if (obj){
+            obj->display();
+        }
     } while ( obj != nullptr );
     return;
 #endif
 }
 #undef NEW_INS
 #undef TEST_EQ
+
+#if UNIT
+int main(){
+    Parser::test();
+}
+#endif

@@ -59,6 +59,11 @@ class Parser {
     ParseObj *parseJump();
     int parseRegister();
     int parseInt();
+    int parseExpr();
+    int parseAddExpr();
+    int parseMulExpr();
+    int parseUnaryExpr();
+    int parseBaseExpr();
     void genParseError();
     void displayError(const char *fmt,...);
     public:
@@ -67,6 +72,7 @@ class Parser {
     void init(const char *p);
     ParseObj *parse();
     static void test();
+    static void exprTest();
     inline size_t getInsCount(){ return insCount; }
 };
 

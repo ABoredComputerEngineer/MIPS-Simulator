@@ -22,15 +22,15 @@ ASMSRC = $(SRC)/assembler
 assembler: $(ASMDEPENDENCIES) 
 		$(CXX) $(ASMDEPENDENCIES) $(DEBUG) -o $(BIN)/assembler 
 
-$(BIN)/main.o: $(ASMSRC)/main.cpp
+$(BIN)/main.o: $(ASMSRC)/main.cpp $(ASMINCLUDE)/*.hpp
 		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/main.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/main.o
-$(BIN)/gen.o: $(ASMSRC)/gen.cpp 
+$(BIN)/gen.o: $(ASMSRC)/gen.cpp $(ASMINCLUDE)/*.hpp
 		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/gen.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/gen.o
-$(BIN)/parse.o: $(ASMSRC)/parse.cpp 
+$(BIN)/parse.o: $(ASMSRC)/parse.cpp $(ASMINCLUDE)/*.hpp 
 		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/parse.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/parse.o
-$(BIN)/lex.o: $(ASMSRC)/lex.cpp 
+$(BIN)/lex.o: $(ASMSRC)/lex.cpp $(ASMINCLUDE)/*.hpp
 		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/lex.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/lex.o
-$(BIN)/common.o: $(ASMSRC)/common.cpp 
+$(BIN)/common.o: $(ASMSRC)/common.cpp $(ASMINCLUDE)/*.hpp 
 		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/common.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/common.o
 
 # =======================================================================

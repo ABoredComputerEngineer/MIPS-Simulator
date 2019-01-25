@@ -9,7 +9,8 @@ struct Position {
 
 struct Lexer{
     enum TokenKind {
-        NONE,
+        NONE ,
+        TOKEN_BAD,
         TOKEN_REGISTER,
         TOKEN_INSTRUCTION,
         TOKEN_INT,
@@ -19,7 +20,19 @@ struct Lexer{
         TOKEN_COMMA,
         TOKEN_COLON,
         TOKEN_END,
-        TOKEN_NEWLINE
+        TOKEN_NEWLINE,
+        TOKEN_ADD,
+        TOKEN_SUB,
+        TOKEN_MUL,
+        TOKEN_DIV,
+        TOKEN_LSHIFT,
+        TOKEN_RSHIFT,
+        TOKEN_BAND,
+        TOKEN_BOR,
+        TOKEN_BXOR,
+        TOKEN_COMPLEMENT,
+        TOKEN_NOT,
+
     };
     TokenKind kind;
     const char *stream;
@@ -40,6 +53,9 @@ struct Lexer{
     bool expect(TokenKind, char *);
     inline int getInt(){ return int_val;}
     inline bool isToken(TokenKind);
+    inline bool isAddOp();
+    inline bool isMulOp();
+    inline bool isUnaryOp();
     Position currentPos();
     void nextInstruction(char *buff);
     static void test();
@@ -50,6 +66,16 @@ struct Lexer{
 };
 inline bool Lexer::isIns(){ return kind == TOKEN_INSTRUCTION; }
 inline bool Lexer::isToken( TokenKind k ){ return kind == k; }
+inline bool Lexer::isAddOp(){
+    return ( kind == TOKEN_ADD || kind == TOKEN_SUB );
+}
+inline bool Lexer::isMulOp(){
+    return (kind >= TOKEN_MUL && kind <= TOKEN_BXOR );
+}
+
+inline bool Lexer::isUnaryOp(){
+    return ( kind == TOKEN_COMPLEMENT || kind == TOKEN_NOT || kind == TOKEN_SUB );
+}
 extern charToIntMap digitMap; // defined in common.cpp 
 extern strToBoolMap keywordMap; // defined in common.cpp
 #endif
