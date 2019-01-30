@@ -7,7 +7,7 @@ using std::string;
 // FileException class will be moved to another file
 // TODO : Maybe not use std::vector?
 
-Generator::Generator (const char *f ):file(f),parseSuccess(false),genSuccess(false),totalIns(0){
+Generator::Generator (const char *f ):file(f),parseSuccess(true),genSuccess(true),totalIns(0){
     prog.reserve( 100 );
     objs.reserve( 100 );
 }
@@ -245,6 +245,32 @@ void Generator :: displayObjs(){
         objs[i]->display();
     }
 }
+
+void Generator :: dumpObjs(){
+    for ( size_t i = 0; i < objs.size(); i++ ){
+        dumpBuff.append("Instruction Code:\n 0x%llx\n",prog[i]);
+        objs[i]->dumpToBuff(dumpBuff);
+    }
+}
+
+void Generator :: dumpToFile( const char *path ){
+    string s( (path)?path:"out.dump" );
+    std::ofstream outFile( s, std::ofstream::out | std::ofstream::binary );
+    if ( !outFile.is_open() || !outFile.good() ){
+        const char *msg = strerror( errno );
+        throw FileException( formatErr("Error! Cannot generate output file \'%s\':%s",s.c_str(),msg) );
+        return;
+    }
+    size_t bytes = dumpBuff.len;
+    char *data  = dumpBuff.buff;
+    outFile.write(reinterpret_cast<char *>( data ), bytes );
+    if ( outFile.bad() ){
+        const char *msg = strerror( errno );
+        throw FileException( formatErr("Error! Cannot write to file \'%s\'. %s",s,msg) );
+    }
+    outFile.close();
+}
+
 void Generator :: test (){
     assert( IS_SIGNED_16( -8 ) );
     assert( IS_SIGNED_16( 123 ) );

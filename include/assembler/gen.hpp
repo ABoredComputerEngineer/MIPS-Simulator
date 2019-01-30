@@ -1,6 +1,7 @@
 #ifndef GEN_HPP
 
 #define GEN_HPP
+#include "common.hpp"
 #include <vector>
 #include <fstream>
 typedef uint32_t Code;
@@ -37,6 +38,7 @@ class Generator {
     bool parseSuccess;
     bool genSuccess;
     size_t totalIns;
+    AppendBuffer dumpBuff;
     Code encodeRtype(const ParseObj *);
     Code encodeItype( const ParseObj *);
     Code encodeBranch( const ParseObj *);
@@ -48,12 +50,16 @@ class Generator {
     public:
     Generator (const char * );
     ~Generator () ;
-    bool parseFile();
+    bool parseFile(); // returns true if the parsing completed without any errors
     bool encode();
     static void test();
     void generateFile(const char *path);
     void generateFile(const std::string &path); // TODO
     void displayObjs();
+    void dumpObjs();
+    void dumpToFile( const char *);
+    inline bool isParseSuccess(){ return parseSuccess; }
+    inline bool isGenSuccess(){ return genSuccess; }
 };
 
 extern  char *errBuff; // defined in main.cpp

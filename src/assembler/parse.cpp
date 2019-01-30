@@ -71,6 +71,35 @@ void ParseObj :: display () const {
     }
     printl("");
 }
+
+void ParseObj::dumpToBuff( AppendBuffer &buff ){
+    buff.append( "Instruction: %s\n" , insString.c_str() );
+    buff.append( "op = %d\n", ins.opcode );
+    if ( ins.insClass == Instruction::RTYPE  ){
+        buff.append("rs = %ld\n", props.Rtype.rs );
+        buff.append("rt = %ld\n", props.Rtype.rt );
+        buff.append("rd = %ld\n", props.Rtype.rd);
+        buff.append("shamt = %ld\n", props.Rtype.shamt);
+        buff.append("func = %ld\n", ins.func );
+    } else if ( ins.insClass == Instruction :: ITYPE ){
+        buff.append("rs = %ld\n", props.Itype.rs );
+        buff.append("rt = %ld\n", props.Itype.rt );
+        buff.append("immediate = %llx\n", props.Itype.addr );
+    } else if ( ins.insClass == Instruction :: BRTYPE ){
+        buff.append("rs = %ld\n",props.Branch.rs );
+        buff.append( "rt = %ld\n", props.Branch.rt );
+        buff.append( "Word offset = 0x%llx\n", props.Branch.offset );
+        if ( props.Branch.label ){
+            buff.append( "Label name = %s\n", props.Branch.label );
+        }
+    } else if ( ins.insClass == Instruction :: JTYPE ) {
+        buff.append("Word address = 0x%llx\n",  props.Jump.addr );
+        if( props.Jump.label ){
+            buff.append("Label name = %s", props.Jump.label );
+        }
+    }
+    buff.append("\n");
+}
 #undef print
 #undef printl
 #undef print2l

@@ -1,6 +1,7 @@
 #ifndef PARSE_HPP
 
 #define PARSE_HPP
+#include "common.hpp"
 #include <cstring>
 struct ParseObj {
     const Instruction ins;
@@ -37,7 +38,7 @@ struct ParseObj {
     void setBranch( Integer rs, Integer rt, Integer off );
     void setJump( Integer address );
     void setJump( const char *s );
-
+    void dumpToBuff(AppendBuffer &);
 };
 
 class Parser {

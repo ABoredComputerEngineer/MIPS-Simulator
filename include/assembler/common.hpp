@@ -12,6 +12,8 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cassert>
+#include <cstdlib>
+#include <cstdio>
 typedef long int Integer;
 
 struct Instruction {
@@ -79,5 +81,22 @@ struct FileException {
     }  
 };
 
-void init();
+void initialize_assembler();
+struct AppendBuffer {
+    enum { DEFAULT_SIZE = 1024 };
+    char *buff;
+    size_t len;
+    size_t cap;
+
+    AppendBuffer (size_t buffSize);
+
+    AppendBuffer ();
+
+    ~AppendBuffer();
+
+    void alloc();
+    char *append(const char *fmt, ... );
+    inline char *getBuff() { return buff; }
+};
+
 #endif // COMMON_HPP
