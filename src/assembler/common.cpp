@@ -44,6 +44,7 @@ void initIns( ){
 
     ADD_INS_BR(beq,4,BRANCH);
     ADD_INS_JMP(jmp,2,JUMP);
+    ADD_INS_JMP(jal,3,JUMP);
     ADD_INS_BR(bne,5,BRANCH);
 }
 #undef NEW_INS
