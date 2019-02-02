@@ -41,6 +41,10 @@ bool Lexer::match( TokenKind k , char *buff){
 bool Lexer::expect(TokenKind k , char *buff ){
     return match(k,buff);
 }
+
+bool Lexer::matchInsEnd(char *buff ){
+    return match(TOKEN_NEWLINE,buff) || match( TOKEN_END,buff);
+}
 void Lexer :: init ( const char *str){
     line = 1;
     stream = str;

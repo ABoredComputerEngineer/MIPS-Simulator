@@ -70,6 +70,7 @@ char *loadProgram(const char *path){
 
 bool assemble(const char *inPath, const char *outPath, bool isDump, const char *dumpPath){
     string outFile( outPath );
+    labelMap.clear();
     if ( isDirectory(outPath) ){
         outFile += "test.bin";
     }

@@ -48,7 +48,7 @@ $(BIN)/vm.o: $(VMSRC)/vm.cpp
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/vm.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vm.o
 $(BIN)/printBuffer.o: $(VMSRC)/printBuffer.cpp
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/printBuffer.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/printBuffer.o
-$(BIN)/functions.o: $(VMSRC)/printBuffer.cpp
+$(BIN)/functions.o: $(VMSRC)/functions.cpp $(VMSRC)/printBuffer.cpp
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/functions.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/functions.o
 
 clean:

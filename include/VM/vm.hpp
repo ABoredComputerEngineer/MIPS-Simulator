@@ -114,6 +114,8 @@ class Machine {
     void beq();
     void jmp();
     void bne();
+    void jr();
+    void jal();
 };
 
 

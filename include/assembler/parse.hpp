@@ -72,6 +72,7 @@ class Parser {
     int parseBaseExpr();
     void genParseError();
     void displayError(const char *fmt,...);
+    void parseInsEnd();
     public:
     Parser ( const char *p );
     inline bool isSuccess(){ return parseSuccess ;}

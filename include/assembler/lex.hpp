@@ -51,6 +51,7 @@ struct Lexer{
     inline bool isIns();
     bool match(TokenKind, char *);
     bool expect(TokenKind, char *);
+    bool matchInsEnd(char *buff);
     inline int getInt(){ return int_val;}
     inline bool isToken(TokenKind);
     inline bool isAddOp();

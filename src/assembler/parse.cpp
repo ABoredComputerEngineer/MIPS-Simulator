@@ -287,9 +287,8 @@ ParseObj *Parser :: parseRtype ( ){
     }
     if ( err ){
         displayError("Invalid arguments to the instruction \'%s\'.",current.str.c_str());
-    }else if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE, buff) ){
-        err = true;
-        displayError("Too many arguments to instruction %s.", current.str.c_str() );
+    } else {
+        parseInsEnd();
     }
     p->setRtype( reg1,reg2,reg3 );
     return p;
@@ -303,10 +302,7 @@ ParseObj *Parser :: parseItype ( ){
     rs = parseRegister();
     lex.expect(Lexer::TOKEN_COMMA,buff); 
     addr = parseInt();
-    if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE, buff) ){
-        err = true;
-        displayError("Too many arguments to instruction %s.", current.str.c_str() );
-    }
+    parseInsEnd();
     p->setItype( rs,rt,addr );
     return p;
 }
@@ -320,10 +316,7 @@ ParseObj *Parser::parseLS(){
     lex.expect(Lexer::TOKEN_LPAREN,buff);
     rs = parseRegister();
     lex.expect(Lexer::TOKEN_RPAREN,buff);
-    if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE,buff) ){
-        err = true;
-        displayError("Too many arguments to instruction %s.", current.str.c_str() );
-    }
+    parseInsEnd();
     p->setItype(rs,rt,off);
     return p;
 }
@@ -346,10 +339,7 @@ ParseObj *Parser::parseBranch(){
         displayError("Expected jump offset (integer) or Label name. Got \'%s\' instead.",buff);
     }
     lex.next(buff);
-    if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE,buff) ){
-        err = true;
-        displayError("Too many arguments to instruction %s.", current.str.c_str() );
-    }
+    parseInsEnd();
     return p;
 }
 
@@ -366,22 +356,21 @@ ParseObj *Parser::parseJump(){
         displayError("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
     }
     lex.next(buff);
-    if ( !err && !lex.isToken(Lexer::TOKEN_END) && !lex.match(Lexer::TOKEN_NEWLINE, buff) ){
+    parseInsEnd();
+    return p;
+}
+
+void Parser::parseInsEnd(){
+    if ( !err && !lex.matchInsEnd(buff) ){
         err = true;
         displayError("Too many arguments to instruction %s.", current.str.c_str() );
     }
-    return p;
 }
 
 ParseObj *Parser::parseJr(){
     ParseObj *p = new ParseObj( current, currentStr, currentLine, insCount + 1 );
     auto rs = parseRegister();
-    lex.expect(Lexer::TOKEN_COMMA, buff );
-    if ( !err && !lex.match(Lexer::TOKEN_NEWLINE,buff) ){
-        // Error has not already occured and we are unable to match a new-line ( i.e end of instruction )  character
-        err = true;
-        displayError("Too many arguments to the instruction \'jr\'.");
-    }
+    parseInsEnd();
     p->setJr(rs);
     return p;
 }

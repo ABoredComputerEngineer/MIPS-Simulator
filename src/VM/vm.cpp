@@ -232,8 +232,10 @@ Machine::Machine (size_t bytes):memory(bytes,WORD_SIZE){
     pc = memory.textStart;
 }
 
-void Machine::addFunctions( ){
 #define ADD_FUNCTION(opcode,func) ( functions[( opcode )] = &Machine::func )
+void Machine::addFunctions( ){
+    // For R-type instructions with opcode == 0, the function
+    // is added into the map with the key 64 + func
     ADD_FUNCTION(64+0,sll);
     ADD_FUNCTION(64+32,addr);
     ADD_FUNCTION(64+33,addu);
@@ -245,9 +247,10 @@ void Machine::addFunctions( ){
     ADD_FUNCTION(64+39,nor);
     ADD_FUNCTION(64+42,slt);
     ADD_FUNCTION(64+43,sltu);
-
+    ADD_FUNCTION(64+8,jr);
 
     ADD_FUNCTION(2,jmp);
+    ADD_FUNCTION(3,jal);
     ADD_FUNCTION(4,beq);
     ADD_FUNCTION(5,bne);
     ADD_FUNCTION(8,addi);

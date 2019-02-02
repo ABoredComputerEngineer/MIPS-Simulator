@@ -265,7 +265,7 @@ void Machine::beq(){
 }
 void Machine::jmp(){
     size_t addr = getBits(currentIns,25,0);
-    pc = ( addr << 2 );
+    pc = memory.textStart + ( addr << 2 );
 }
 void Machine::bne(){
     size_t rtVal = reg[RT(currentIns)];
@@ -282,4 +282,17 @@ void Machine::bne(){
             pc += ( offset << 2 ) ;
         }
     }
+}
+
+void Machine::jal(){
+    size_t addr = getBits(currentIns,25,0);
+    // pc is the full address of the next instruction but we have to store the word number of the next instruction
+    // and hence the rshift by 2    
+    reg[RA] = pc ;
+    pc = memory.textStart + ( addr << 2 );
+}
+
+void Machine::jr(){
+    size_t rsVal = reg[RS(currentIns)];
+    pc = ( rsVal );
 }
