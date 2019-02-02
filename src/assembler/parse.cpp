@@ -14,6 +14,9 @@ ParseObj::~ParseObj (){
         }
     }
 }
+void ParseObj :: setJr ( Integer rs ){
+    props.Jr.rs = rs;
+}
 void ParseObj::setItype ( Integer rs, Integer rt, Integer addr ){
     props.Itype.rs = rs;
     props.Itype.rt = rt;
@@ -46,7 +49,7 @@ void ParseObj::setJump( const char *s ){
 #define print2l( x, y ) ( std::cout << ( x ) << ( y ) << std::endl )
 void ParseObj :: display () const {
     std::cout << std:: dec ;
-    print2l( "Instruction :\n" , insString );
+    print2l( "Instruction : " , insString );
     print2l( "op = ", ins.opcode );
     if ( ins.insClass == Instruction::RTYPE  ){
         print2l("rs = ", props.Rtype.rs );
@@ -68,6 +71,17 @@ void ParseObj :: display () const {
     } else if ( ins.insClass == Instruction :: JTYPE ) {
         print2l("Word address = ",  props.Jump.addr );
         if( props.Jump.label ){ print2l("Label name = ", props.Jump.label ); }
+    } else if ( ins.insClass == Instruction:: PTYPE ){
+        if ( ins.opcode == 0 ){
+            switch( ins.func ){
+                case 8: // jr
+                    print2l("rs = ", props.Jr.rs);
+                    print2l("func = ", ins.func );
+                    break;
+                default:
+                    break;
+            }
+        }
     }
     printl("");
 }
@@ -96,6 +110,17 @@ void ParseObj::dumpToBuff( AppendBuffer &buff ){
         buff.append("Word address = 0x%llx\n",  props.Jump.addr );
         if( props.Jump.label ){
             buff.append("Label name = %s", props.Jump.label );
+        }
+    } else if ( ins.insClass == Instruction:: PTYPE ){
+        if ( ins.opcode == 0 ){
+            switch( ins.func ){
+                case 8: // jr
+                    buff.append("rs = %ld\n", props.Jr.rs);
+                    buff.append("func = %ld\n", ins.func );
+                    break;
+                default:
+                    break;
+            }
         }
     }
     buff.append("\n");
@@ -348,8 +373,32 @@ ParseObj *Parser::parseJump(){
     return p;
 }
 
+ParseObj *Parser::parseJr(){
+    ParseObj *p = new ParseObj( current, currentStr, currentLine, insCount + 1 );
+    auto rs = parseRegister();
+    lex.expect(Lexer::TOKEN_COMMA, buff );
+    if ( !err && !lex.match(Lexer::TOKEN_NEWLINE,buff) ){
+        // Error has not already occured and we are unable to match a new-line ( i.e end of instruction )  character
+        err = true;
+        displayError("Too many arguments to the instruction \'jr\'.");
+    }
+    p->setJr(rs);
+    return p;
+}
+
 ParseObj *Parser::parseIns(  ){
-    if ( current.kind == Instruction::AL ){
+    // Pseudo instructions are handled separately
+    if ( current.insClass == Instruction::PTYPE ){
+        if ( current.opcode == 0 ){
+            switch ( current.func ){
+                case 8:
+                    return parseJr();
+                    break;
+                default:
+                    break;
+            }
+        }
+    } else if ( current.kind == Instruction::AL ){
         if ( current.insClass == Instruction:: ITYPE ){
             // Parse itype version of instruction
             return parseItype();

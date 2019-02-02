@@ -24,6 +24,9 @@ struct ParseObj {
             mutable Integer addr;
             const char *label;
         } Jump;
+        struct {
+            Integer rs; // for 'jr' instructions. this might be merged with other structure in future versions
+        } Jr;
     } props;
     ParseObj(){}
     ParseObj ( const Instruction & , std::string const &, size_t x,size_t y);
@@ -38,6 +41,7 @@ struct ParseObj {
     void setBranch( Integer rs, Integer rt, Integer off );
     void setJump( Integer address );
     void setJump( const char *s );
+    void setJr( Integer rs );
     void dumpToBuff(AppendBuffer &);
 };
 
@@ -58,6 +62,7 @@ class Parser {
     ParseObj *parseLS();
     ParseObj *parseBranch();
     ParseObj *parseJump();
+    ParseObj *parseJr();
     int parseRegister();
     int parseInt();
     int parseExpr();

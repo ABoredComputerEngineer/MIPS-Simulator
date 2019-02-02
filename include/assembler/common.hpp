@@ -28,6 +28,7 @@ struct Instruction {
         ITYPE,
         JTYPE,
         BRTYPE,
+        PTYPE, // Denotes pseudo instructions which dosen't follow above rules
     };
     std::string str;  
     Integer opcode;

@@ -166,6 +166,28 @@ Code Generator::encodeJump( const ParseObj *p ){
     return x;
 
 }
+
+Code Generator :: encodeJr ( const ParseObj *p ){
+    Code x = 0;
+    x = ( UINT32_CAST(p->props.Jr.rs) ) << ( RT_LEN + RD_LEN + SHAMT_LEN + FUNC_LEN);
+    x |= ( UINT32_CAST(p->ins.func) & 0x3f );
+    return x;
+}
+
+Code Generator :: encodePtype ( const ParseObj *p ){
+    if ( p->ins.opcode == 0 ){
+        switch( p->ins.func ){
+            case 8:
+                return encodeJr(p);
+                break;
+            default:
+                break;
+        }
+    }
+    displayError(p,"Unidentified pseudo instruction %s.", p->ins.str.c_str());
+    return 0; 
+}
+#if 0
 Code Generator::encodeObj( const ParseObj *p){
     if ( p->ins.type() == Instruction::ITYPE ){
         return encodeItype(p);
@@ -175,10 +197,14 @@ Code Generator::encodeObj( const ParseObj *p){
         return encodeBranch(p);
     } else if ( p->ins.type() == Instruction :: JTYPE){
         return encodeJump(p);
+    } else if ( p->ins.insClass == Instruction:: PTYPE ){
+        return encodePtype(p);
     }
     std::cerr << "Invalid Object!" << std::endl;
     return 0;
 }
+#endif
+
 bool Generator :: encode () {
     for ( auto iter = objs.begin(); iter != objs.end() ; iter ++ ){
         Code code;
@@ -199,6 +225,10 @@ bool Generator :: encode () {
         } else if ( p->ins.insClass == Instruction :: JTYPE ){
             resolveJump(p);
             code = encodeJump(p);
+        } else if ( p->ins.insClass == Instruction:: PTYPE ){
+            code  = encodePtype(p);
+        } else {
+            displayError(p,"Invalid instruction %s.",p->ins.str.c_str());
         }
         prog.push_back(code);
     }
@@ -285,12 +315,14 @@ void Generator :: test (){
              "Exit: beq $t0,$s5,Loop\n"\
              "      beq $t1,$t2,Exit\n"\
                     "jmp Exit2\n"\
+                    "jal Exit\n"\
+                    "jr $s2\n"\
              "Exit2: ");
     Generator g( s.c_str() );
     bool x = g.parseFile( );
     g.encode();
     for ( size_t i = 0; i < g.objs.size() ; i++ ){
-        std::cout<<"Instruction Code: "<< std::endl << "0x"<< std::hex << g.prog[i] << std::endl;
+        std::cout<<"Instruction Code: "<< "0x"<< std::hex << g.prog[i] << std::endl;
         g.objs[i]->display();
     }
     (void)x;

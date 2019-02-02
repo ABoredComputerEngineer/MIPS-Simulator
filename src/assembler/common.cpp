@@ -11,6 +11,7 @@ charToIntMap digitMap;
 #define ADD_INSI(NAME,OP,KIND) insMap[#NAME] = NEW_INS(NAME,OP,0,KIND,ITYPE); keywordMap[#NAME] = true 
 #define ADD_INS_JMP(NAME,OP,KIND) insMap[#NAME] = NEW_INS(NAME,OP,0,KIND,JTYPE); keywordMap[#NAME] = true 
 #define ADD_INS_BR(NAME,OP,KIND) insMap[#NAME] = NEW_INS(NAME,OP,0,KIND,BRTYPE); keywordMap[#NAME] = true 
+#define ADD_INSP(NAME,OP,FUNC,KIND) insMap[#NAME] = NEW_INS(NAME,OP,FUNC,KIND,PTYPE); keywordMap[#NAME] = true;
 void initIns( ){
     ADD_INSR(sll,0,AL);
     ADD_INSR(addr,32,AL);
@@ -23,7 +24,9 @@ void initIns( ){
     ADD_INSR(nor,39,AL);
     ADD_INSR(slt,42,AL);
     ADD_INSR(sltu,43,AL);
-
+ 
+    ADD_INSP(jr,0,8,JUMP);   
+    
     ADD_INSI(addi,8,AL);
     ADD_INSI(addiu,9,AL);
     ADD_INSI(slti,10,AL);

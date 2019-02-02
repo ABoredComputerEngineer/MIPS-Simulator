@@ -44,6 +44,8 @@ class Generator {
     Code encodeBranch( const ParseObj *);
     Code encodeJump( const ParseObj *);
     Code encodeObj( const ParseObj * );
+    Code encodePtype( const ParseObj * );
+    Code encodeJr( const ParseObj * );
     void displayError(const ParseObj *,const char *fmt,...);
     bool resolveBranch(const ParseObj *);
     bool resolveJump(const ParseObj *);

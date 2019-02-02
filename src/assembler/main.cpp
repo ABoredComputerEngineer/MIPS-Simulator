@@ -125,6 +125,9 @@ const char *splitPath(const char *fullPath, char delim ){
 
 int main(int argc, char *argv[] ){
     initialize_assembler();
+    Lexer::test();
+    Parser::test();
+    Generator::test();
     if ( argc < 2 ){
         std::cout << "Please input a file" << std::endl;
         return 1;

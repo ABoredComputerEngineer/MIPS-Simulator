@@ -65,8 +65,17 @@ The assembler currently supports the following instructions:
 * beq
 * jmp
 * bne
+* jal
+* jr
 
 The Assembler as of now only checks for syntax errors, resolves branch address and generates output files.
+It also evaluates constant expressions. So you can do stuff like
+
+```addi $s0,$s1,2*3```
+
+and the assembler will evaluate `2*3` to `6`. Currently it supports all C-styled binary arithmetic and bitwise operators.
+
+
 The binary file generated is a raw hex file with no headers ( though they will be added later on. See [TODO list](#todo-list) ) for more information.
 
 To use the assembler :
