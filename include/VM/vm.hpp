@@ -71,6 +71,7 @@ class Machine {
     void executeIns(Word);
     static void arithmeticTest(Machine &);
     static void testBranch(Machine &);
+    static void testProcedure(Machine &);
     public:
     static void test();
     void loadProgram(const char *);

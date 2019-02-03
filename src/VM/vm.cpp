@@ -573,11 +573,42 @@ void Machine::testBranch(Machine &test){
     TEST_EQ(test.reg[S0],7,"Branching failed");
 }
 
+void Machine::testProcedure(Machine &test){
+    // Test for jal and jr functionality
+    test.reset();
+    Memory &mem = test.memory;
+    /* BELOW PROGRAM
+     *   addi $a0,$zero,3
+     *   addi $a1,$zero,4
+     *   jal Add
+     *   sw $v0,0($gp)
+     *   jmp Exit
+     *   Add:
+     *   addr $v0, $a0,$a1
+     *   jr $ra
+     *   Exit:
+     */
+    Word ins[] = {
+        0x20040003,
+        0x20050004,
+        0xc000005, 
+        0xaf820000,
+        0x8000007,
+        0x851020,
+        0x3e00008,
+    };
+    memcpy(mem.vals+mem.textStart,(char *)ins,sizeof(ins));
+    test.execute();
+    Word val = mem.vals[mem.staticStart];
+    TEST_EQ(val,7,"Procedure Test Failed. Something wrong with jal and jr instructions.");
+}
+
 void Machine::test(){
     Machine testMachine(512* sizeof(Word));
     arithmeticTest(testMachine);
     testBranch(testMachine);
 //    testMachine.dumpMem("./memDump.dump");
+    testProcedure(testMachine);
     testMachine.memory.dealloc();
 }
 
@@ -665,7 +696,7 @@ int main(int argc, char *argv[] ){
     errBuff = new char[ERR_BUFF_SIZE];
     init();
     Machine m(1024 * sizeof(Word) );
-    if  ( m.load(filePath) ){
+    if ( m.load(filePath) ){
         m.execute();
         if ( isDump ){
             m.dumpMem(dump.c_str());
