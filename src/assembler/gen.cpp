@@ -251,6 +251,42 @@ bool Generator :: parseFile () {
     return p.isSuccess();
 }
 
+struct MainHeader{
+    char  isa[16]; // string containing the isa that generated the file
+    size_t version; // the version of the assembler that generated the binary file
+    size_t textOffset; // the number of bytes from the begining from which the actual program code starts
+    size_t phOffset; // the number of bytes after which the program header begins
+    size_t dbgOffset; // the number of bytes after which the debug section begins
+    size_t secOffset; // the number of bytes after which section information is stored, wiil be added in later version
+
+    void setHeader(const char *s);
+};
+
+
+struct ProgHeader {
+    size_t progSize; // the total size of only the machine code in bytes
+    size_t origin; // the offset from the start of text segment in  memory where the code should be stored
+
+    ProgHeader (size_t a, size_t b):progSize(a),origin(b){}
+};
+
+struct DebugSection{
+    char srcPath[PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
+    size_t lineMap;
+};
+
+#define PROG_VERSION 1
+
+void MainHeader::setHeader(const char *s){
+    memset(isa,0,16);
+    snprintf(isa,16,"%s",s);
+    version = PROG_VERSION;
+    textOffset = sizeof(MainHeader) + sizeof(ProgHeader);
+    phOffset = sizeof(MainHeader);
+    dbgOffset = 0;
+    secOffset = 0;
+}
+
 void Generator :: generateFile(const char *path){
     string s( (path)?path:"test.bin" );
     std::ofstream outFile( s, std::ofstream::out | std::ofstream::binary );
@@ -261,12 +297,37 @@ void Generator :: generateFile(const char *path){
     }
     size_t bytes = prog.size() * sizeof(Code); // size of the file that will be generated
     Code *data = prog.data();
+    MainHeader mheader;
+    mheader.setHeader("MIPS-32");
+    ProgHeader pheader(bytes,0);
+    outFile.write(reinterpret_cast<char *>(&mheader), sizeof(MainHeader) );
+    outFile.write(reinterpret_cast<char *>(&pheader), sizeof(ProgHeader) );
     outFile.write(reinterpret_cast<char *>( data ), bytes );
     if ( outFile.bad() ){
         const char *msg = strerror( errno );
         throw FileException( formatErr("Error! Cannot write to file \'%s\'. %s",s,msg) );
     }
     outFile.close();
+}
+
+std::string getFullPath(const char *path ){
+    char x[PATH_MAX + 1];
+    char *err = realpath(path,x);
+    if ( err ){
+        // NO error occured
+        return std::string (x);
+    } else {
+        perror("realpath() error! Cannot expand the input file path");
+        return std::string("");
+    }
+}
+
+void Generator :: genHeader( AppendBuffer &buff ){
+    MainHeader mheader;
+    mheader.setHeader("MIPS-32");
+    ProgHeader pheader(prog.size() * sizeof(Code), 0 );
+    buff.append("%s",reinterpret_cast<char *>( &mheader ));
+    buff.append("%s",reinterpret_cast<char *>( &pheader ));
 }
 
 void Generator :: displayObjs(){

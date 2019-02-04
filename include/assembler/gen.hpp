@@ -4,6 +4,7 @@
 #include "common.hpp"
 #include <vector>
 #include <fstream>
+#include <climits>
 typedef uint32_t Code;
 #define ORIGIN 00000 
 enum Limits {
@@ -49,6 +50,7 @@ class Generator {
     void displayError(const ParseObj *,const char *fmt,...);
     bool resolveBranch(const ParseObj *);
     bool resolveJump(const ParseObj *);
+    void genHeader(AppendBuffer &);
     public:
     Generator (const char * );
     ~Generator () ;
