@@ -201,6 +201,16 @@ void AppendBuffer::alloc( ){
     buff = ( char * )malloc( sizeof ( char ) * DEFAULT_SIZE);
 }
 
+void AppendBuffer::grow( size_t size ){
+    char *newBuff = ( char * )xrealloc(buff,size);
+    if ( newBuff ){
+        buff = newBuff;
+        cap = size;
+    } else {
+        std::cerr << "Unable to allocate memory" << std::endl;
+    }
+}
+
 char *AppendBuffer::append( const char *fmt , ... ){
     if ( !buff || !cap ){
         alloc( );
@@ -211,9 +221,10 @@ char *AppendBuffer::append( const char *fmt , ... ){
     va_start( args, fmt );
     size_t printLen = vsnprintf(NULL,0,fmt,args);
     if ( len + printLen + 1 >= cap ){
-        buff = (char * )realloc(buff, 2 * ( len + printLen + 1 ) );
-        assert( buff );
-        cap = 2 * ( len + printLen  + 1 );
+        grow(2 * ( len + printLen + 1 ) );
+        //buff = (char * )realloc(buff, 2 * ( len + printLen + 1 ) );
+        //assert( buff );
+        //cap = 2 * ( len + printLen  + 1 );
     }
     assert( len + printLen < cap );
     size_t freeSpace = cap-len;
@@ -226,4 +237,22 @@ char *AppendBuffer::append( const char *fmt , ... ){
     len += printLen;
     va_end(args);
     return buff; 
+}
+
+char *AppendBuffer::appendn( size_t size, const char *x ){ 
+    // print size bytes from x into the buffer
+    // The buffer is not zero terminated by this function
+    if ( !buff || !cap ){
+        alloc();
+    } else 
+    assert(buff);
+    if ( len + size >= cap ){
+        size_t s = ( len + size > 2 * cap ) ? ( len  + size ) : ( 2 * cap );
+        grow(s);
+    }
+    assert( len + size < cap );
+    char *end = buff + len;
+    snprintf(end,size,"%s",x);
+    len += size;
+    return buff;
 }

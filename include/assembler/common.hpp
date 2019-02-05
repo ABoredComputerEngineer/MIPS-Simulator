@@ -96,7 +96,9 @@ struct AppendBuffer {
     ~AppendBuffer();
 
     void alloc();
+    void grow(size_t size);
     char *append(const char *fmt, ... );
+    char *appendn(size_t size, const char *s );
     inline char *getBuff() { return buff; }
 };
 

@@ -289,8 +289,11 @@ void Machine::loadProgram(const char *path){
         throw MachineException(formatErr("%s : %s",path,s), LDERR|OPNERR );
         return ;
     }
-    inFile.seekg(0,std::ios_base::end); 
-    size_t len = inFile.tellg();
+    MainHeader mheader;
+    ProgHeader pheader;
+    inFile.read((char *)&mheader, sizeof(MainHeader));
+    inFile.read( (char *)&pheader, sizeof(ProgHeader));
+    size_t len = pheader.progSize;
     /* 
      * textSize is number of words
      * Convert it to number of bytes by multiplying with 4
@@ -299,7 +302,6 @@ void Machine::loadProgram(const char *path){
         throw MachineException(path,LDERR|LARGEPROG);
         return;
     }
-    inFile.seekg(0);
     inFile.read(reinterpret_cast<char *>( memory.vals +  memory.textStart ), len );
     inFile.close();    
 }

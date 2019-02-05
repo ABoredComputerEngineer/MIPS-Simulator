@@ -7,7 +7,9 @@ using std::string;
 // FileException class will be moved to another file
 // TODO : Maybe not use std::vector?
 
-Generator::Generator (const char *f ):file(f),parseSuccess(true),genSuccess(true),totalIns(0){
+Generator::Generator (const char *content, const char *src, bool debug ):\
+file(content),srcPath(src),parseSuccess(true),genSuccess(true),debugMode(debug),totalIns(0)\
+{
     prog.reserve( 100 );
     objs.reserve( 100 );
 }
@@ -208,7 +210,7 @@ Code Generator::encodeObj( const ParseObj *p){
 bool Generator :: encode () {
     for ( auto iter = objs.begin(); iter != objs.end() ; iter ++ ){
         Code code;
-        ParseObj *p = *iter; 
+        ParseObj *p = *iter;
         if ( p->ins.insClass == Instruction::RTYPE ){
             if ( p->ins.isShiftLogical() && !IS_UNSIGNED_5(p->props.Rtype.shamt) ){
                     displayError(p, "Value for shamt field exceeds 5-bits ( max %d ).", FIVE_BIT_MAX );
@@ -251,32 +253,9 @@ bool Generator :: parseFile () {
     return p.isSuccess();
 }
 
-struct MainHeader{
-    char  isa[16]; // string containing the isa that generated the file
-    size_t version; // the version of the assembler that generated the binary file
-    size_t textOffset; // the number of bytes from the begining from which the actual program code starts
-    size_t phOffset; // the number of bytes after which the program header begins
-    size_t dbgOffset; // the number of bytes after which the debug section begins
-    size_t secOffset; // the number of bytes after which section information is stored, wiil be added in later version
-
-    void setHeader(const char *s);
-};
-
-
-struct ProgHeader {
-    size_t progSize; // the total size of only the machine code in bytes
-    size_t origin; // the offset from the start of text segment in  memory where the code should be stored
-
-    ProgHeader (size_t a, size_t b):progSize(a),origin(b){}
-};
-
-struct DebugSection{
-    char srcPath[PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
-    size_t lineMap;
-};
-
 #define PROG_VERSION 1
 
+ProgHeader::ProgHeader(size_t size, size_t offset):progSize(size),origin(offset){}
 void MainHeader::setHeader(const char *s){
     memset(isa,0,16);
     snprintf(isa,16,"%s",s);
@@ -297,12 +276,13 @@ void Generator :: generateFile(const char *path){
     }
     size_t bytes = prog.size() * sizeof(Code); // size of the file that will be generated
     Code *data = prog.data();
-    MainHeader mheader;
-    mheader.setHeader("MIPS-32");
-    ProgHeader pheader(bytes,0);
-    outFile.write(reinterpret_cast<char *>(&mheader), sizeof(MainHeader) );
-    outFile.write(reinterpret_cast<char *>(&pheader), sizeof(ProgHeader) );
+    genMainHeader(outFile);
+    genProgHeader(outFile, bytes);
+
     outFile.write(reinterpret_cast<char *>( data ), bytes );
+    if ( debugMode ){
+        genDebugSection(outFile);
+    }
     if ( outFile.bad() ){
         const char *msg = strerror( errno );
         throw FileException( formatErr("Error! Cannot write to file \'%s\'. %s",s,msg) );
@@ -310,17 +290,35 @@ void Generator :: generateFile(const char *path){
     outFile.close();
 }
 
-std::string getFullPath(const char *path ){
-    char x[PATH_MAX + 1];
-    char *err = realpath(path,x);
-    if ( err ){
-        // NO error occured
-        return std::string (x);
-    } else {
-        perror("realpath() error! Cannot expand the input file path");
-        return std::string("");
+void Generator :: genDebugSection(std::ofstream &outFile){
+    vector <LineMapEntry> lineMap;
+    lineMap.reserve(100); // reserve space for 100 entries
+    genLineInfo(lineMap);
+
+    DebugHeader dbg;
+    dbg.lineMapCount = lineMap.size();
+    if ( !realpath(srcPath,dbg.srcPath)){
+        // error in determining the absolute path of the source file
+        perror("Generator Error : Unable to find the correct source file path. ");
+        genSuccess = false;
     }
+
+    outFile.write(reinterpret_cast<char *>(&dbg),sizeof(dbg));
+    outFile.write(reinterpret_cast<char *>(&lineMap[0]), sizeof(LineMapEntry) * dbg.lineMapCount );
+     
 }
+
+void Generator::genMainHeader(std::ofstream &outFile){
+    MainHeader mheader;
+    mheader.setHeader("MIPS-32");
+    outFile.write(reinterpret_cast<char *>(&mheader), sizeof(MainHeader) );
+}
+
+void Generator :: genProgHeader(std::ofstream &outFile, size_t progSize ){
+    ProgHeader pheader( progSize, 0);
+    outFile.write(reinterpret_cast<char *>(&pheader), sizeof(ProgHeader) );
+}
+
 
 void Generator :: genHeader( AppendBuffer &buff ){
     MainHeader mheader;
@@ -336,6 +334,21 @@ void Generator :: displayObjs(){
         objs[i]->display();
     }
 }
+
+size_t Generator :: genLineInfo(vector <LineMapEntry> &lineMap){
+    size_t line = 1; // Assume 1 instruction = 1 line, though it will change later
+    for ( size_t i = 0 ; i < objs.size(); i++ ){
+        ParseObj *p = objs[i];
+        if ( p->line != line ){
+            line = p->line;
+            lineMap.push_back( (LineMapEntry){line,prog[i]});
+        }        
+        line++;
+    }
+    return lineMap.size();
+
+}
+
 
 void Generator :: dumpObjs(){
     for ( size_t i = 0; i < objs.size(); i++ ){
@@ -379,7 +392,7 @@ void Generator :: test (){
                     "jal Exit\n"\
                     "jr $s2\n"\
              "Exit2: ");
-    Generator g( s.c_str() );
+    Generator g( s.c_str(), NULL, false );
     bool x = g.parseFile( );
     g.encode();
     for ( size_t i = 0; i < g.objs.size() ; i++ ){

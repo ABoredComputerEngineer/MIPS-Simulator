@@ -4,6 +4,7 @@
 #include <cinttypes>
 #include <cstddef>
 #include <unordered_map>
+#include <climits>
 #include "printBuffer.hpp"
 typedef uint8_t byte;
 typedef uint32_t Word;
@@ -143,6 +144,27 @@ class Machine {
 inline size_t getBits( size_t x, size_t end, size_t start){
     return ( x >> (start) ) & ~( ~0 << ( end-start + 1 ) );
 }
+
+struct MainHeader{
+    char  isa[16]; // string containing the isa that generated the file
+    size_t version; // the version of the assembler that generated the binary file
+    size_t textOffset; // the number of bytes from the begining from which the actual program code starts
+    size_t phOffset; // the number of bytes after which the program header begins
+    size_t dbgOffset; // the number of bytes after which the debug section begins
+    size_t secOffset; // the number of bytes after which section information is stored, wiil be added in later version
+};
+
+
+struct ProgHeader {
+    size_t progSize; // the total size of only the machine code in bytes
+    size_t origin; // the offset from the start of text segment in  memory where the code should be stored
+    ProgHeader(){}
+};
+
+struct DebugSection{
+    char srcPath[PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
+    size_t lineMap;
+};
 
 Word getWord(byte *);
 Word getHalfWord(byte *);

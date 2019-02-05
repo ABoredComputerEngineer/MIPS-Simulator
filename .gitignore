@@ -76,4 +76,8 @@ dump/
 *callgrind*
 # GDB files
 *gdb*
+
+#Test Directory
+test/
+cpTest
 # End of https://www.gitignore.io/api/c++,linux,visualstudiocode

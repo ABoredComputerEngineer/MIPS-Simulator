@@ -32,12 +32,42 @@ enum Limits {
 #define IS_UNSIGNED_26( x ) ( !( (x) & ~TWENTY_SIX_BIT_MAX ) )
 #define IS_SIGNED_16(x) ( ( ( x ) >= INT16_MIN ) && ( ( x ) <= INT16_MAX ) )
 
+struct MainHeader{
+    char  isa[16]; // string containing the isa that generated the file
+    size_t version; // the version of the assembler that generated the binary file
+    size_t textOffset; // the number of bytes from the begining from which the actual program code starts
+    size_t phOffset; // the number of bytes after which the program header begins
+    size_t dbgOffset; // the number of bytes after which the debug section begins
+    size_t secOffset; // the number of bytes after which section information is stored, wiil be added in later version
+
+    void setHeader(const char *s);
+};
+
+
+struct ProgHeader {
+    size_t progSize; // the total size of only the machine code in bytes
+    size_t origin; // the offset from the start of text segment in  memory where the code should be stored
+
+    ProgHeader (size_t size, size_t offset);
+};
+
+struct DebugHeader{
+    char srcPath[PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
+    size_t lineMapCount; // the number of entires in the line to instruction map
+};
+
+struct LineMapEntry {
+    size_t lineNum;
+    size_t ins;
+};
 class Generator {
     std::vector <Code> prog;
     std::vector <ParseObj *> objs;
     const char *file;
+    const char *srcPath;
     bool parseSuccess;
     bool genSuccess;
+    bool debugMode;
     size_t totalIns;
     AppendBuffer dumpBuff;
     Code encodeRtype(const ParseObj *);
@@ -51,8 +81,13 @@ class Generator {
     bool resolveBranch(const ParseObj *);
     bool resolveJump(const ParseObj *);
     void genHeader(AppendBuffer &);
+    size_t genLineInfo(std::vector<LineMapEntry> &);
+    void genDebugInfo(AppendBuffer &);
+    void genMainHeader(std::ofstream &outFile);
+    void genProgHeader(std::ofstream &outFile, size_t progSize);
+    void genDebugSection( std::ofstream &outFile );
     public:
-    Generator (const char * );
+    Generator (const char *content, const char *src, bool debug );
     ~Generator () ;
     bool parseFile(); // returns true if the parsing completed without any errors
     bool encode();
@@ -65,6 +100,7 @@ class Generator {
     inline bool isParseSuccess(){ return parseSuccess; }
     inline bool isGenSuccess(){ return genSuccess; }
 };
+
 
 extern  char *errBuff; // defined in main.cpp
 extern char *formatErr(const char *,...); // defined in main.cpp

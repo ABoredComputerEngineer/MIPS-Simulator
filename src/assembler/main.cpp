@@ -83,7 +83,7 @@ bool assemble(const char *inPath, const char *outPath, bool isDump, const char *
     }
 
 
-    Generator gen(content);
+    Generator gen(content, inPath, true);
     gen.parseFile();
     if ( !gen.isParseSuccess() ){
         return false;
