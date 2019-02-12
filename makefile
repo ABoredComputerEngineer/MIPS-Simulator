@@ -42,13 +42,14 @@ $(BIN)/common.o: $(ASMSRC)/common.cpp $(ASMINCLUDE)/*.hpp
 VMINCLUDE = $(INCLUDE)/VM
 VMOBJS = $(BIN)/vm.o $(BIN)/printBuffer.o $(BIN)/functions.o
 VMSRC = $(SRC)/VM
+VMHEADERS = $(VMINCLUDE)/*.hpp
 vm: $(VMOBJS)
 	$(CXX) $(VMOBJS) $(DEBUG) -o $(BIN)/vm
-$(BIN)/vm.o: $(VMSRC)/vm.cpp
+$(BIN)/vm.o: $(VMSRC)/vm.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/vm.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vm.o
 $(BIN)/printBuffer.o: $(VMSRC)/printBuffer.cpp
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/printBuffer.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/printBuffer.o
-$(BIN)/functions.o: $(VMSRC)/functions.cpp $(VMSRC)/printBuffer.cpp
+$(BIN)/functions.o: $(VMSRC)/functions.cpp $(VMSRC)/printBuffer.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/functions.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/functions.o
 
 clean:

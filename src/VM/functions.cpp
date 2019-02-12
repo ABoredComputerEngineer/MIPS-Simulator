@@ -1,24 +1,43 @@
 #include "vm.hpp"
 
+
+std::unordered_map < Machine::ExceptionType , std::string, ExceptionClassHash > exceptStr = {
+    { Machine::ExceptionType::OVERFLOW, "Overflow occured" }, 
+    { Machine::ExceptionType::INVALID, "Invalid Instruction" }, 
+    { Machine::ExceptionType::TRAP, "Software Breakpoint occured" }, 
+    { Machine::ExceptionType::MEM_OUT_OF_RANGE, "Memory access out of valid range" }, 
+    { Machine::ExceptionType::INVALID_WRITE, "Writing into an invalid memory address" },
+    { Machine::ExceptionType::INVALID_READ, "Reading from an invalid memory address" }, 
+    { Machine::ExceptionType::MEM_UNALIGNED_READ, "Unaligned memory read"},
+    { Machine::ExceptionType::MEM_UNALIGNED_WRITE, "Unaligned memory write"},
+};
+
+long int signExtend16( size_t x ){
+    // checks the 16th bit if it is 1 return the sign extened version of that number
+    x &= 0xffff; // reduce x to 16 bits if not done already
+    if ( ( x >> 15 ) & 1 ){
+        return (~0 << 15) | x;        
+    }
+    return x;
+    
+}
 void Machine::addr( ){
-#if DEBUG 
     size_t rs = getBits(currentIns,25,21);
     size_t rt = getBits(currentIns,20,16);
     size_t rd = getBits(currentIns,15,11);
-    reg[rd] = reg[rs] + reg[rt];
-#else
-    reg[RD(currentIns)] = reg[RS(currentIns)] + reg[RT(currentIns)];
-#endif
+    if ( reg[rs] > WORD_MAX - reg[rt] ){
+        setException(ExceptionType::OVERFLOW);
+    }
+    reg[rd] = reg[rs] + reg[rt] ;
 }
 void Machine::addi(){
-#if DEBUG
     size_t rs = getBits(currentIns,25,21);
     size_t rt = getBits(currentIns,20,16);
-    size_t imm = getBits(currentIns,15,0);
+    long int imm = IMM(currentIns);
+    if ( reg[rs] > WORD_MAX - imm ){
+        setException(ExceptionType::OVERFLOW);
+    }
     reg[rt] = reg[rs] + imm;
-#else
-    reg[RT(currentIns)] = reg[RS(currentIns)] + IMM(currentIns);
-#endif
 }
 
 /*
@@ -62,6 +81,8 @@ void Machine::sll( ){
     Word rt = RT(currentIns);
     Word shamt = SHAMT(currentIns);
     if ( reg[rt] > ( WORD_MAX >> shamt ) ){
+        // Oveflow occured
+        setException(ExceptionType::OVERFLOW);
         reg[RD(currentIns)] = 0;
     } else {
         reg[RD(currentIns)] = reg[rt] << shamt;
@@ -144,70 +165,133 @@ void Machine::lb(){
  *  So, when the char is converted into a unsigned type Word, The sign bit of the
  *  char will fill all the leftmost bits, which is the desired behaviour
  */
-    reg[RT(currentIns)] = static_cast<Word>( static_cast<char>( memory.vals[ reg[RS(currentIns)] + IMM(currentIns)] ) );
-    
+    long long rt = RT(currentIns);
+    int offset = IMM(currentIns) ; 
+    long long rsVal = reg[ RS(currentIns) ];
+    long long index = rsVal + offset;
+    /* bounds checking for memory acessing
+     * if bounds checking failed set epc and sr and do noting
+     * does not allow one  to modify the contents of the reserved area
+     */
+    if ( index >= 0 && index <  (long int)memory.byteCount ){
+        reg[rt] = static_cast<Word>( static_cast<char>( memory.vals[index]) ); 
+    } else{
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
+//    reg[RT(currentIns)] = static_cast<Word>( static_cast<char>( memory.vals[ reg[RS(currentIns)] + IMM(currentIns)] ) );
 }
+
 void Machine::lh(){
     /*
      * Here, getHalfWord returns the sign extened 32-bit representation
      * Which is what we want
      */
     size_t rt = RT(currentIns);
-    size_t rs = RS(currentIns);
+    size_t rsVal = reg[RS(currentIns)];
     long int offset = static_cast<int32_t>( IMM(currentIns) );
-    Word val = getHalfWord( memory.vals + ( offset + reg[rs] ) );
-    reg[rt] = val;
+    long int index = offset + rsVal;
+    if ( index & 1 ){ // Equivalent to index % 2 != 0
+        setException(ExceptionType::MEM_UNALIGNED_READ); 
+    }
+    if ( index >= 0 && index <  (long int)memory.byteCount - 1 ){
+        Word val = getHalfWord( memory.vals + index  );
+        reg[rt] = val;
+    } else{
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
 }
 
 void Machine::lw(){
     size_t rt = RT(currentIns);
-    size_t rs = RS(currentIns);
+    size_t rsVal = reg[ RS(currentIns) ];
     long int offset = static_cast<int32_t>( IMM(currentIns) );
-    Word val = getWord( memory.vals + ( offset + reg[rs] ) );
-    reg[rt] = val;
+    long int index = rsVal + offset;
+    if ( index & ( 4 -1 ) ){ // Equivalent to index & 4 != 0
+        // the loading address is not a multiple of 4
+        setException(ExceptionType::MEM_UNALIGNED_READ);
+    }
+    if ( index >= 0 && index <  (long int)memory.byteCount ){
+        Word val = getWord( memory.vals + index  );
+        reg[rt] = val;
+    } else{
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
 }
 
 void Machine::lbu(){
     size_t rt = RT(currentIns);
     size_t rs = RS(currentIns); // rs is a 'pointer' variable, in this case just a normal word
     long int offset = static_cast<int32_t>( IMM(currentIns) ); // offset is byte indexed
-    size_t index = offset + reg[rs]; 
-    Word value = static_cast<Word>( memory.vals[index] ); 
-    reg[rt] = value;
+    long int index = offset + reg[rs]; 
+    if ( index >= 0 && index <  (long int)memory.byteCount ){
+        Word value = static_cast<Word>( memory.vals[index] ); 
+        reg[rt] = value;
+    } else {
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
 
 }
 void Machine::lhu(){
     size_t rt = RT(currentIns);
     size_t rs = RS(currentIns);
     long int offset = static_cast<int32_t>( IMM(currentIns) );
-    Word val = ( getHalfWord( memory.vals + ( offset + reg[rs] ) ) ) & ( UMAX_16 );
-    reg[rt] = val;
+    long int index = offset + reg[rs];
+    if ( index & 1 ){
+        setException(ExceptionType:: MEM_UNALIGNED_READ);
+    }
+    if ( index >= 0 && index <  (long int)memory.byteCount ){
+        Word val = ( getHalfWord( memory.vals + ( offset + reg[rs] ) ) ) & ( UMAX_16 );
+        reg[rt] = val;
+    } else {
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
 }
 void Machine::sb(){
    size_t rt = RT(currentIns);
-   size_t rs = RS(currentIns);
+   size_t rsVal = reg[ RS(currentIns) ];
    byte val =  reg[rt] & BYTE_MAX;
    long int offset = static_cast<int32_t>( IMM(currentIns) );
-   memory.vals[reg[rs] + offset] = val;
+   long int index = offset + rsVal;
+   if ( index >= (long int)memory.textStart && index < (long int)memory.byteCount ){
+        memory.vals[rsVal + offset] = val;
+   } else{
+       setException(ExceptionType:: MEM_OUT_OF_RANGE);
+   }
 }
 void Machine::sh(){
-   size_t rt = RT(currentIns);
-   size_t rs = RS(currentIns);
-   long int offset = static_cast<int32_t>( IMM(currentIns) );
-   size_t val = reg[rt] & UMAX_16; // convert value at rt into a 16-bit value
-   memory.vals[reg[ rs ] + offset] = static_cast<byte>( val & BYTE_MAX ); // set the lower byte of the value at the starting of the half word
-   memory.vals[reg[ rs ] + offset + 1 ] = static_cast<byte>( ( val >> 8 ) & BYTE_MAX );
+    size_t rt = RT(currentIns);
+    size_t rs = RS(currentIns);
+    long int offset = static_cast<int32_t>( IMM(currentIns) );
+    long int index = offset + reg[rs];
+    size_t val = reg[rt] & UMAX_16; // convert value at rt into a 16-bit value
+    if ( index & 1 ){
+        setException(ExceptionType:: MEM_UNALIGNED_READ);
+    }
+    if ( index >=  (long int)memory.textStart && index < (long int) memory.byteCount - 1 ){
+       // set the lower byte of the value at the starting of the half word
+        memory.vals[index] = static_cast<byte>( val & BYTE_MAX );
+        memory.vals[index + 1 ] = static_cast<byte>( ( val >> 8 ) & BYTE_MAX );
+    } else{
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
 }
 void Machine::sw(){
-   size_t rt = RT(currentIns);
-   size_t rs = RS(currentIns);
-   long int offset = static_cast<int32_t>( IMM(currentIns) );
-   size_t base = reg[rs];
-   size_t val = reg[rt] & WORD_MAX; // convert value at rt into a 16-bit value
-   memory.vals[base + offset] = static_cast<byte>( val & BYTE_MAX ); // set the lower byte of the value at the starting of the half word
-   memory.vals[base + offset + 1 ] = static_cast<byte>( ( val >> 8 ) & BYTE_MAX );
-   memory.vals[base + offset + 2] = static_cast<byte>( ( val >> 16 ) & BYTE_MAX );
-   memory.vals[base + offset + 3 ] = static_cast<byte>( ( val >> 24 ) & BYTE_MAX );
+    size_t rt = RT(currentIns);
+    size_t rs = RS(currentIns);
+    long int offset = static_cast<int32_t>( IMM(currentIns) );
+    long int index = reg[rs] + offset;
+    size_t val = reg[rt] & WORD_MAX; // convert value at rt into a 32-bit value
+    if ( index & ( 4 -1 ) ){ // Equivalent to index % 4 != 0
+        setException(ExceptionType::MEM_UNALIGNED_READ);
+    }
+    if ( index >=  (long int)memory.textStart && index <=  (long int)memory.byteCount - 3 ){
+        memory.vals[index] = static_cast<byte>( val & BYTE_MAX ); // set the lower byte of the value at the starting of the half word
+        memory.vals[index + 1 ] = static_cast<byte>( ( val >> 8 ) & BYTE_MAX );
+        memory.vals[index + 2] = static_cast<byte>( ( val >> 16 ) & BYTE_MAX );
+        memory.vals[index + 3 ] = static_cast<byte>( ( val >> 24 ) & BYTE_MAX );
+    } else {
+        setException(ExceptionType::MEM_OUT_OF_RANGE);
+    }
 }
 
 

@@ -56,7 +56,7 @@ struct FileException {
 };
 
 
-enum ExceptionType {
+enum ErrType{
     LDERR = 0x1, // Signals error during loading of program
     OPNERR= 0x2, // Signals error during opening of the file
     RDERR = 0x4, // Signals error during reading from the file
@@ -84,6 +84,44 @@ struct MachineException {
 };
 
 MachineException :: MachineException( const char *s, byte fields ):str( s ? s : "" ),type(fields){ }
+
+std::ostream& operator << ( std::ostream &out, Machine::ExceptionType type ){
+    #define PROCESS(x) case x : out << #x; break;
+    // eg. PROCESS (Machine::OVERFLOW ) expands to 
+    // case Machine::OVERFLOW: out << "Machine::OVERFLOW"; break;
+    switch ( type ){
+        PROCESS( Machine::ExceptionType::OVERFLOW ) 
+        PROCESS( Machine::ExceptionType::INVALID )
+        PROCESS( Machine::ExceptionType::TRAP ) 
+        PROCESS( Machine::ExceptionType::MEM_OUT_OF_RANGE ) 
+        PROCESS( Machine::ExceptionType::MEM_INVALID )
+        PROCESS( Machine::ExceptionType::INVALID_WRITE )
+        PROCESS( Machine::ExceptionType::INVALID_READ )
+        PROCESS( Machine::ExceptionType::MEM_UNALIGNED_READ )
+        PROCESS( Machine::ExceptionType::MEM_UNALIGNED_WRITE )
+    }
+    return out;
+    #undef PROCESS
+}
+extern std::unordered_map< Machine::ExceptionType , std::string, ExceptionClassHash > exceptStr;
+void Machine::setException(Machine::ExceptionType type){
+    sr  |= static_cast<unsigned int>( type );
+    epc = pc;
+    std::cerr<< "Exception name : " << type << std::endl;
+    std::cerr << "Exception info: " << exceptStr[type] << std::endl;
+    std::cerr << "Exception thrown by instruction: ";
+    if ( isDebug ){
+        // if we are in debug mode show corresponding line
+        size_t lineNum = insNumMap[ currentInsNumber ];
+        std::cerr << srcCode[ lineNum ] << std::endl;
+        std::cerr << "At line : " << std::dec << lineNum << std::endl; 
+        
+    } else {
+        std::cerr<< "0x" << std::hex << currentIns << std::endl;
+    }
+    std::cerr << std::endl;
+}
+
 
 /*
  *==================================================
@@ -227,9 +265,12 @@ Word getHalfWord(byte *b){
  */
 
 
-Machine::Machine (size_t bytes):memory(bytes,WORD_SIZE){
+Machine::Machine (size_t bytes):\
+memory(bytes,WORD_SIZE),\
+pc(memory.textStart),\
+basePC(pc),\
+isDebug(false){
     addFunctions();
-    pc = memory.textStart;
 }
 
 #define ADD_FUNCTION(opcode,func) ( functions[( opcode )] = &Machine::func )
@@ -281,6 +322,35 @@ void Machine::reset(){
     memory.set(0);
 }
 
+void Machine::readDebugInfo(std::ifstream &inFile ){
+    DebugSection debug;
+    inFile.read( reinterpret_cast<char*>( &debug ), sizeof(DebugSection));
+    LineMap *temp = new LineMap[ debug.lineMapCount * debug.lineMapSize ];
+    inFile.read( reinterpret_cast<char*>(temp), debug.lineMapCount * debug.lineMapSize );
+    for ( size_t i = 0; i < debug.lineMapCount; i++ ){
+        LineMap &l = temp[i];
+        codeMap[ l.ins ] = l.lineNum;
+        insNumMap[ l.insNum ] = l.lineNum;
+    }
+    
+    std::ifstream srcFile( debug.srcPath, std::ifstream::binary | std::ifstream::in );    
+    if ( !inFile.good() || !inFile.is_open() ){
+        const char *s = strerror( errno );
+        std::cerr << formatErr("%s:%s",debug.srcPath,s) << std::endl;
+        std::cerr << "Execution will continue without any source information for display!" << std::endl;
+    }
+    std::string line;
+    srcCode.push_back(""); // store a garbage value at position 0 ( which corresponds to line number 0)
+    while ( getline( srcFile, line ) ){
+        srcCode.push_back( line );
+    }
+    if ( srcFile.bad() ){
+        perror("Unable to read the soure file : ");
+    }
+    delete temp;
+}
+
+
 void Machine::loadProgram(const char *path){
     assert( path );
     std::ifstream inFile(path,std::ifstream::binary|std::ifstream::in);
@@ -303,6 +373,13 @@ void Machine::loadProgram(const char *path){
         return;
     }
     inFile.read(reinterpret_cast<char *>( memory.vals +  memory.textStart ), len );
+    if ( mheader.dbgOffset ){
+        // a debug offset has been specified i.e. program is 
+        // in debug mode, so we run in debug mode
+        isDebug = true;
+        debugOffset = mheader.dbgOffset;
+        readDebugInfo( inFile );
+    }
     inFile.close();    
 }
 
@@ -337,14 +414,17 @@ void Machine::executeIns(Word w){
     currentIns = w;
     size_t op = getBits(w,31,26);
     if ( !op ){
-        op = 64 + FUNC(w);
+        op = 64 + FUNC(w); // if opcode is zero, use 64 + func field as the key
     }
-    auto func = functions.find(op);
-    if ( func != functions.end() ){
-        InsPointer fp = func->second;
+    if ( functions.count(op) ){ // equivalent to searching for op in the list of available function
+        InsPointer fp = functions[op];
         ( this->*fp )();
+    } else if ( op == 0x3fu ){ 
+        // 0x3f is the breakpoint/trap signal
+        setException( ExceptionType:: TRAP); // set the trap flag in exception register
+        return;
     } else {
-        std::cerr << "Unable to find the instruction " << op << std::endl; // Replace with an exception
+        setException( ExceptionType :: INVALID ); // set invalid instruction flag in exception register
         return;
     }
 
@@ -352,17 +432,21 @@ void Machine::executeIns(Word w){
 void Machine::execute(){
     currentIns = getWord( memory.vals + pc ); 
     while ( currentIns ){
+        currentInsNumber = 1 + ( pc - basePC ) / 4;
         pc += 4;
         size_t op = getBits(currentIns,31,26);
         if ( !op ){
             op = 64 + FUNC(currentIns);
         }
-        auto func = functions.find(op);
-        if ( func != functions.end() ){
-            InsPointer fp = func->second;
+        if ( functions.count(op) ){ // equivalent to searching for op in the list of available function
+            InsPointer fp = functions[op];
             ( this->*fp )();
+        } else if ( op == 0x3fu ){ 
+            // 0x3f is the breakpoint/trap signal
+            setException( ExceptionType:: TRAP); // set the trap flag in exception register
+            return;
         } else {
-            std::cerr << "Unable to find the instruction " << op << std::endl; // Replace with an exception
+            setException( ExceptionType :: INVALID ); // set invalid instruction flag in exception register
             return;
         }
         currentIns = getWord( memory.vals + pc ); 
@@ -665,7 +749,7 @@ int main(int argc, char *argv[] ){
     const char *dumpPath = nullptr;
     bool isDump = false;
     std::string dump("");
-    std::string fileName( ( split == fileName )?fileName:(split+1) );
+    std::string fileName( ( split == filePath )?filePath:(split+1) );
     std::string fileDirectory("");
     if ( split != filePath ){
         for ( const char *x = filePath; x != (split+1) ; x++ ){
@@ -693,7 +777,6 @@ int main(int argc, char *argv[] ){
         if ( S_ISDIR(s.st_mode) ){
             dump += fileName;
         }
-        dump += ".dump";
     }
     errBuff = new char[ERR_BUFF_SIZE];
     init();

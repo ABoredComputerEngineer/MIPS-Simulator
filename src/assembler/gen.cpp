@@ -296,6 +296,7 @@ void Generator :: genDebugSection(std::ofstream &outFile){
     genLineInfo(lineMap);
 
     DebugHeader dbg;
+    dbg.lineMapSize = sizeof(LineMapEntry);
     dbg.lineMapCount = lineMap.size();
     if ( !realpath(srcPath,dbg.srcPath)){
         // error in determining the absolute path of the source file
@@ -303,7 +304,7 @@ void Generator :: genDebugSection(std::ofstream &outFile){
         genSuccess = false;
     }
 
-    outFile.write(reinterpret_cast<char *>(&dbg),sizeof(dbg));
+    outFile.write(reinterpret_cast<char *>(&dbg),sizeof(DebugHeader));
     outFile.write(reinterpret_cast<char *>(&lineMap[0]), sizeof(LineMapEntry) * dbg.lineMapCount );
      
 }
@@ -311,6 +312,9 @@ void Generator :: genDebugSection(std::ofstream &outFile){
 void Generator::genMainHeader(std::ofstream &outFile){
     MainHeader mheader;
     mheader.setHeader("MIPS-32");
+    if ( debugMode ){
+        mheader.dbgOffset = sizeof(MainHeader) + sizeof(ProgHeader) + prog.size() * sizeof(Code);
+    }
     outFile.write(reinterpret_cast<char *>(&mheader), sizeof(MainHeader) );
 }
 
@@ -320,14 +324,6 @@ void Generator :: genProgHeader(std::ofstream &outFile, size_t progSize ){
 }
 
 
-void Generator :: genHeader( AppendBuffer &buff ){
-    MainHeader mheader;
-    mheader.setHeader("MIPS-32");
-    ProgHeader pheader(prog.size() * sizeof(Code), 0 );
-    buff.append("%s",reinterpret_cast<char *>( &mheader ));
-    buff.append("%s",reinterpret_cast<char *>( &pheader ));
-}
-
 void Generator :: displayObjs(){
     for ( size_t i = 0; i < objs.size() ; i++ ){
         std::cout<<"Instruction Code: "<< std::endl << "0x"<< std::hex << prog[i] << std::endl;
@@ -336,17 +332,11 @@ void Generator :: displayObjs(){
 }
 
 size_t Generator :: genLineInfo(vector <LineMapEntry> &lineMap){
-    size_t line = 1; // Assume 1 instruction = 1 line, though it will change later
-    for ( size_t i = 0 ; i < objs.size(); i++ ){
+    for ( size_t i = 0; i < objs.size(); i++ ){
         ParseObj *p = objs[i];
-        if ( p->line != line ){
-            line = p->line;
-            lineMap.push_back( (LineMapEntry){line,prog[i]});
-        }        
-        line++;
+        lineMap.push_back( (LineMapEntry){p->line,prog[i],i+1} );
     }
     return lineMap.size();
-
 }
 
 

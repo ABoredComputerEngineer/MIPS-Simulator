@@ -1,14 +1,17 @@
 #ifndef VM_HPP
 
 #define VM_HPP
+#include <iostream>
 #include <cinttypes>
 #include <cstddef>
 #include <unordered_map>
 #include <climits>
+#include <vector>
 #include "printBuffer.hpp"
 typedef uint8_t byte;
 typedef uint32_t Word;
 
+typedef std::unordered_map<size_t,size_t> NumToNumMap;
 enum IntegerLimits {
     BYTE_MAX = 0xffu,
     WORD_MAX = 0xffffffffu, // Equal to UINT32_MAX
@@ -40,12 +43,43 @@ struct Memory{
     friend class Machine;
 };
 
+struct MainHeader{
+    char  isa[16]; // string containing the isa that generated the file
+    size_t version; // the version of the assembler that generated the binary file
+    size_t textOffset; // the number of bytes from the begining from which the actual program code starts
+    size_t phOffset; // the number of bytes after which the program header begins
+    size_t dbgOffset; // the number of bytes from the begining of file after which the debug section begins
+    size_t secOffset; // the number of bytes after which section information is stored, wiil be added in later version
+};
+
+
+struct ProgHeader {
+    size_t progSize; // the total size of only the machine code in bytes
+    size_t origin; // the offset from the start of text segment in  memory where the code should be stored
+    ProgHeader(){}
+};
+
+#define SRC_PATH_MAX 4096
+
+struct DebugSection{
+    char srcPath[SRC_PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
+    size_t lineMapCount;
+    size_t lineMapSize;
+};
+
+struct LineMap {
+    size_t lineNum;
+    size_t ins;
+    size_t insNum;
+};
+
 
 class Machine {
 //    typedef  std::function< void (Word) > InstructionFunc;
     public:
     typedef void (Machine::*InsPointer)(void); 
     typedef std::unordered_map< size_t , InsPointer > CodeToFunctionMap; // your array of function pointers
+    // General purpose registers
     enum Registers{
         ZERO = 0,
         AT,
@@ -62,14 +96,37 @@ class Machine {
         WORD_SIZE = 32,
     };
 
+    // The exception Type denotes a bit field. The exception occured if the bit at the position is set
+    enum class ExceptionType : unsigned int {
+        OVERFLOW = 0x1,   // Arithmeic overflow 
+        INVALID = 0x2, // Invalid Instruction
+        TRAP = 0x4, // Trap signal , used for debugging
+        MEM_OUT_OF_RANGE  = 0x8, // Memory access is outside the range of the memory we currently have
+        MEM_INVALID = 0x10, // Write in invaild portion of memory
+        INVALID_WRITE = 0X20,
+        INVALID_READ = 0x40, // Read from an invalid alignment, i.e reading from word which is not 4 aligned, half word from an uneven memory address
+        MEM_UNALIGNED_READ = 0x80,
+        MEM_UNALIGNED_WRITE = 0x100
+    };
     private:
-    Word reg[REG_COUNT]; // Registers are not byte addressable so we declare them as static array
+    Word reg[REG_COUNT]; //These contain the general purpose registers. Registers are not byte addressable so we declare them as static array
     Memory memory; // the primary memory
     Word pc; // The program counter
+    Word epc; // The exception program counter, is largely unused, stores the addres of the most recent instruction that caused an exception
+    Word sr; // The status register whose value is the type of exception 
+    const Word basePC; // the base  program counter, equal to memory.textStart
+    size_t currentInsNumber;
     Word currentIns;
+    bool isDebug; // set if the program is in debug mode
+    size_t debugOffset; // only has value if program is in debug mode
+    NumToNumMap lineMap; // Maps line number --> Instruction Code
+    NumToNumMap codeMap; // Maps Instruction Code --> LineNumber
+    NumToNumMap insNumMap; // Maps instrution number --> line Number
+    std::vector < std::string > srcCode; // The souce code stored as srcCode[lineNumber] = Code at that line
     CodeToFunctionMap functions;
     void dumpRegister( AppendBuffer &);    
     void executeIns(Word);
+    void setException(ExceptionType type);
     static void arithmeticTest(Machine &);
     static void testBranch(Machine &);
     static void testProcedure(Machine &);
@@ -81,8 +138,8 @@ class Machine {
     void addFunctions();
     void execute();
     void dumpMem(const char *);
+    void readDebugInfo( std::ifstream &file );
     Machine (size_t bytes );
-
 
     private:
     void sll();
@@ -137,7 +194,7 @@ class Machine {
 #define RS(x) ( getBits(x,25,21) )
 #define RT(x) ( getBits(x,20,16) )
 #define RD(x) ( getBits(x,15,11) )
-#define IMM(x) ( getBits(x,15,0) )
+#define IMM(x) ( signExtend16( getBits(x,15,0) & 0xffff ) ) // get last sixteen bits and reduce to 16-bits
 #define SHAMT(w) ( getBits(w,10,6) )
 #define ABS(x) ( ( ( x ) < 0 )?( -( x ) ):0 )
 
@@ -145,28 +202,14 @@ inline size_t getBits( size_t x, size_t end, size_t start){
     return ( x >> (start) ) & ~( ~0 << ( end-start + 1 ) );
 }
 
-struct MainHeader{
-    char  isa[16]; // string containing the isa that generated the file
-    size_t version; // the version of the assembler that generated the binary file
-    size_t textOffset; // the number of bytes from the begining from which the actual program code starts
-    size_t phOffset; // the number of bytes after which the program header begins
-    size_t dbgOffset; // the number of bytes after which the debug section begins
-    size_t secOffset; // the number of bytes after which section information is stored, wiil be added in later version
-};
-
-
-struct ProgHeader {
-    size_t progSize; // the total size of only the machine code in bytes
-    size_t origin; // the offset from the start of text segment in  memory where the code should be stored
-    ProgHeader(){}
-};
-
-struct DebugSection{
-    char srcPath[PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
-    size_t lineMap;
-};
 
 Word getWord(byte *);
 Word getHalfWord(byte *);
 
+struct ExceptionClassHash {
+    template < typename T >
+    std::size_t operator() ( T t ) const {
+        return static_cast<size_t>(t);
+    }
+};
 #endif

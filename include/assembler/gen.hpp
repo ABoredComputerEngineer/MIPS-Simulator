@@ -20,6 +20,7 @@ enum Limits {
     SIXTEEN_BIT_MAX = 0xffffu,
     TWENTY_SIX_BIT_MAX = 0x3ffffffu,
     FIFTEEN_BIT_MAX = 0x7fffu,
+    SRC_PATH_MAX = 4096, // the number of bytes used to store the absolute path of the source file
     //INT16_MAX = 0x7fff, // 32768
     //INT16_MIN = -0x8000, // -32768
 };
@@ -52,13 +53,15 @@ struct ProgHeader {
 };
 
 struct DebugHeader{
-    char srcPath[PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
+    char srcPath[SRC_PATH_MAX+1]; // the absolute path of the source file from which the binary file was generated
     size_t lineMapCount; // the number of entires in the line to instruction map
+    size_t lineMapSize; // the size of each entry in a line map , equals to sizeof(LineMapEntry)
 };
 
 struct LineMapEntry {
     size_t lineNum;
     size_t ins;
+    size_t insNum;
 };
 class Generator {
     std::vector <Code> prog;

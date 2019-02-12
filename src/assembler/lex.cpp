@@ -91,9 +91,13 @@ void Lexer::nextInstruction(char *buff){
 void Lexer :: next (char *buff){
     switch ( *stream ){
         case '#': // '#' is going to denote start of a line comment
-            while ( *stream != '\n' )
+            while ( *stream && *stream != '\n' ){
                 stream++;
-            stream++;
+            }
+            if ( *stream == '\n' ){
+                line++;
+                line_start = ++stream;
+            }
             next(buff);
             break;
         case '\n': case '\t': case '\r': case ' ':
