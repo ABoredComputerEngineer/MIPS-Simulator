@@ -1,3 +1,67 @@
+// Contains code for the command line interface of the debugger
+// Run it as ./debug <program_name>
+#include <debug.hpp>
+
+const std::string registerNames[] = {
+    "$zero",
+    "$at",
+    "$v0", "$v1",
+    "$a0", "$a1", "$a2", "$a3",
+    "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7",
+    "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7",
+    "$t8", "$t9",
+    "$k0", "$k1",
+    "$gp", "$sp", "$fp", "$ra",
+};
+void displayRegisters( const RegisterInfo *regs ){
+     const Word *w = reinterpret_cast< const Word * >( regs );
+     size_t len =  sizeof( RegisterInfo )/ sizeof(Word);
+     for ( size_t i = 0; i < len ; i++ ){
+          printf("%-6s = 0x%08x\n",registerNames[i].c_str(), w[i] );
+     }
+}
+bool processCommand( Debugger &debug,const char *line ){
+     std::string l( line );
+     std::istringstream stream( l ); 
+     std::string word;
+     stream >> word;
+     if ( word == "registers" ){
+          RegisterInfo regs = debug.getRegisters();
+          displayRegisters( &regs );
+     } else if ( word == "step" ){
+          debug.singleStep();
+          if ( !debug.isHalted() ){
+               debug.displayCurrentSource();
+          } else {
+               debug.printHaltedMessage();
+          }
+     } else if ( word == "break" ){
+          int line;
+          stream >> line;
+          // Set break point at line x;
+          if ( stream ){
+               debug.setBreakPoint( line );
+          } else {
+               std::cout << "Invalid error" << std::endl;
+          }
+     } else if ( word == "continue" ){
+          debug.continueExecution();
+          debug.displayCurrentSource();
+     } else if ( word == "exit" ){
+          return true;
+     }
+     return false;
+}
+void runDebugger (Debugger &debug){
+     const char *line;
+     bool isExit = false;
+     debug.displaySource( 1, 5 );
+     while ( !isExit && ( line = linenoise(">>") ) ){
+          isExit = processCommand( debug,line );
+          linenoiseHistoryAdd( line );
+          linenoiseFree( (void *)line ); 
+     }
+}
 
 int main( int argc, char *argv[] ){
      if ( argc < 2 ){
