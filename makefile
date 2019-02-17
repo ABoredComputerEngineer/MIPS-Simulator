@@ -43,14 +43,35 @@ VMINCLUDE = $(INCLUDE)/VM
 VMOBJS = $(BIN)/vm.o $(BIN)/printBuffer.o $(BIN)/functions.o
 VMSRC = $(SRC)/VM
 VMHEADERS = $(VMINCLUDE)/*.hpp
-vm: $(VMOBJS)
-	$(CXX) $(VMOBJS) $(DEBUG) -o $(BIN)/vm
+vm: $(VMOBJS) $(BIN)/vmain.o
+	$(CXX) $(VMOBJS) $(BIN)/vmain.o $(DEBUG) -o $(BIN)/vm
+$(BIN)/vmain.o: $(VMSRC)/main.cpp $(VMHEADERS)
+	$(CXX) $(CXXFLAGS) -c $(VMSRC)/main.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vmain.o
 $(BIN)/vm.o: $(VMSRC)/vm.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/vm.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vm.o
 $(BIN)/printBuffer.o: $(VMSRC)/printBuffer.cpp
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/printBuffer.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/printBuffer.o
 $(BIN)/functions.o: $(VMSRC)/functions.cpp $(VMSRC)/printBuffer.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/functions.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/functions.o
+
+# =======================================================================
+# | RULES FOR MAKING THE VM |
+# =======================================================================
+# ALL THE VARIABLES FOR MAKING THE DEBUGGER ( Backend ) START WITH 'DB' PREFIX
+# The vm is also a dependency of the debugger 
+#
+#
+
+DBINCLUDE = $(INCLUDE)/Debugger
+DBOBJS = $(BIN)/dbg.o 
+DBSRC = $(SRC)/Debugger
+DBHEADERS = $(DBINCLUDE)/*.hpp
+
+debugger: $(DBOBJS) $(VMOBJS)
+	$(CXX) $(DBOBJS) $(VMOBJS) $(DBSRC)/linenoise.o $(DEBUG) -o $(BIN)/debug
+
+$(BIN)/dbg.o : $(DBSRC)/debug.cpp $(DBHEADERS)
+	$(CXX) $(CXXFLAGS) -c $(DBSRC)/debug.cpp $(DEBUG) -I $(INCLUDE) -I $(DBINCLUDE) -o $(BIN)/dbg.o
 
 clean:
 	rm -rf $(BIN)/*

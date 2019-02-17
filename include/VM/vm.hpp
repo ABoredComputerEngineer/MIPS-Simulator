@@ -1,10 +1,20 @@
 #ifndef VM_HPP
 
 #define VM_HPP
+#include <unordered_map>
+#include <string>
+#include <cassert>
+#include <cstring>
+#include <fstream>
 #include <iostream>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <cinttypes>
 #include <cstddef>
-#include <unordered_map>
 #include <climits>
 #include <vector>
 #include "printBuffer.hpp"
@@ -36,10 +46,10 @@ struct Memory{
 
     Memory (size_t bytes, size_t wordSize);
     Word endWord();
-    void dealloc();
 
     void dump(AppendBuffer &);
     inline void set(byte); // sets the memory contents to the given  word (uint32)
+    ~Memory();
     friend class Machine;
 };
 
@@ -53,10 +63,10 @@ struct MainHeader{
 };
 
 
-struct ProgHeader {
+struct ProgramHeader {
     size_t progSize; // the total size of only the machine code in bytes
     size_t origin; // the offset from the start of text segment in  memory where the code should be stored
-    ProgHeader(){}
+    ProgramHeader(){}
 };
 
 #define SRC_PATH_MAX 4096
@@ -108,7 +118,7 @@ class Machine {
         MEM_UNALIGNED_READ = 0x80,
         MEM_UNALIGNED_WRITE = 0x100
     };
-    private:
+    protected:
     Word reg[REG_COUNT]; //These contain the general purpose registers. Registers are not byte addressable so we declare them as static array
     Memory memory; // the primary memory
     Word pc; // The program counter
@@ -126,19 +136,20 @@ class Machine {
     CodeToFunctionMap functions;
     void dumpRegister( AppendBuffer &);    
     void executeIns(Word);
-    void setException(ExceptionType type);
+    virtual void setException(ExceptionType type);
     static void arithmeticTest(Machine &);
     static void testBranch(Machine &);
     static void testProcedure(Machine &);
     public:
     static void test();
-    void loadProgram(const char *);
+    void loadProgram(const char *buff, size_t size);
     bool load(const char *);
     void reset();
     void addFunctions();
     void execute();
     void dumpMem(const char *);
     void readDebugInfo( std::ifstream &file );
+    // Following functions serve as interface for debugger
     Machine (size_t bytes );
 
     private:
@@ -197,7 +208,7 @@ class Machine {
 #define IMM(x) ( signExtend16( getBits(x,15,0) & 0xffff ) ) // get last sixteen bits and reduce to 16-bits
 #define SHAMT(w) ( getBits(w,10,6) )
 #define ABS(x) ( ( ( x ) < 0 )?( -( x ) ):0 )
-
+#define FUNC(w) ( getBits(w,5,0) )
 inline size_t getBits( size_t x, size_t end, size_t start){
     return ( x >> (start) ) & ~( ~0 << ( end-start + 1 ) );
 }
@@ -212,4 +223,33 @@ struct ExceptionClassHash {
         return static_cast<size_t>(t);
     }
 };
+
+/*
+ * The Request Exception class is used for exception handling whenever
+ * there is an invalid request, or when a reques could not be completed
+ * Generally only used by the debugger class
+ */
+
+
+struct MachineException {
+    private:
+    std::string str;
+    byte type; // a bit-field denoting what type of errors were caused
+
+    public:
+    MachineException ( const char *, byte );
+    void display() const;
+};
+
+
+enum ErrType{
+    LDERR = 0x1, // Signals error during loading of program
+    OPNERR= 0x2, // Signals error during opening of the file
+    RDERR = 0x4, // Signals error during reading from the file
+    MEMFULL = 0x8, // Signals if the memory is full
+    LARGEPROG = 0x10, // Signals if the program is too large to fit in the memory
+    MEMEND = 0x20, // Signals if trying to write/read past the end of allocated memory
+};
+
+#define ERR_BUFF_SIZE 1024
 #endif

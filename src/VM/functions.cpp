@@ -1,16 +1,6 @@
 #include "vm.hpp"
 
 
-std::unordered_map < Machine::ExceptionType , std::string, ExceptionClassHash > exceptStr = {
-    { Machine::ExceptionType::OVERFLOW, "Overflow occured" }, 
-    { Machine::ExceptionType::INVALID, "Invalid Instruction" }, 
-    { Machine::ExceptionType::TRAP, "Software Breakpoint occured" }, 
-    { Machine::ExceptionType::MEM_OUT_OF_RANGE, "Memory access out of valid range" }, 
-    { Machine::ExceptionType::INVALID_WRITE, "Writing into an invalid memory address" },
-    { Machine::ExceptionType::INVALID_READ, "Reading from an invalid memory address" }, 
-    { Machine::ExceptionType::MEM_UNALIGNED_READ, "Unaligned memory read"},
-    { Machine::ExceptionType::MEM_UNALIGNED_WRITE, "Unaligned memory write"},
-};
 
 long int signExtend16( size_t x ){
     // checks the 16th bit if it is 1 return the sign extened version of that number

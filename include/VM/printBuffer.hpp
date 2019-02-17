@@ -17,6 +17,7 @@ struct AppendBuffer {
     void alloc();
     char *append(const char *fmt, ... );
     inline char *getBuff() { return buff; }
+    inline void clearBuff(){ len = 0; }
 };
 
 #endif

@@ -9,24 +9,11 @@
  * x >> n is the same as x/(2^n)
  */
 
-#include <unordered_map>
-#include <string>
-#include <cassert>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include "vm.hpp"
 #include "printBuffer.hpp"
 
 
 char *errBuff;
-#define ERR_BUFF_SIZE 1024
 #define DEBUG 1
 
 char *formatErr( const char *fmt, ... ){
@@ -56,35 +43,21 @@ struct FileException {
 };
 
 
-enum ErrType{
-    LDERR = 0x1, // Signals error during loading of program
-    OPNERR= 0x2, // Signals error during opening of the file
-    RDERR = 0x4, // Signals error during reading from the file
-    MEMFULL = 0x8, // Signals if the memory is full
-    LARGEPROG = 0x10, // Signals if the program is too large to fit in the memory
-    MEMEND = 0x20, // Signals if trying to write/read past the end of allocated memory
-};
 typedef std::unordered_map< size_t , std::string > exceptionToStrMap;
 exceptionToStrMap exceptionMap;
-struct MachineException {
-    private:
-    std::string str;
-    byte type; // a bit-field denoting what type of errors were caused
 
-    public:
-    MachineException ( const char *, byte );
-    void display() const {
-        for ( size_t i = 1; i <= 0x20; i <<= 1 ){
-            if ( type & i ){
-                std::cerr << exceptionMap[i] << std::endl;
-            }
+void MachineException::display() const {
+    for ( size_t i = 1; i <= 0x20; i <<= 1 ){
+        if ( type & i ){
+            std::cerr << exceptionMap[i] << std::endl;
         }
-        std::cerr << str << std::endl;
     }
-};
-
+    std::cerr << str << std::endl;
+}
 MachineException :: MachineException( const char *s, byte fields ):str( s ? s : "" ),type(fields){ }
-
+#if 0
+// Remove if decided that there will be no external debugging help
+// Lets the machine be a 'truer' representation of an actual MIPS machine
 std::ostream& operator << ( std::ostream &out, Machine::ExceptionType type ){
     #define PROCESS(x) case x : out << #x; break;
     // eg. PROCESS (Machine::OVERFLOW ) expands to 
@@ -103,23 +76,23 @@ std::ostream& operator << ( std::ostream &out, Machine::ExceptionType type ){
     return out;
     #undef PROCESS
 }
-extern std::unordered_map< Machine::ExceptionType , std::string, ExceptionClassHash > exceptStr;
+#endif
 void Machine::setException(Machine::ExceptionType type){
     sr  |= static_cast<unsigned int>( type );
     epc = pc;
-    std::cerr<< "Exception name : " << type << std::endl;
-    std::cerr << "Exception info: " << exceptStr[type] << std::endl;
-    std::cerr << "Exception thrown by instruction: ";
-    if ( isDebug ){
-        // if we are in debug mode show corresponding line
-        size_t lineNum = insNumMap[ currentInsNumber ];
-        std::cerr << srcCode[ lineNum ] << std::endl;
-        std::cerr << "At line : " << std::dec << lineNum << std::endl; 
-        
-    } else {
-        std::cerr<< "0x" << std::hex << currentIns << std::endl;
-    }
-    std::cerr << std::endl;
+    //std::cerr<< "Exception name : " << type << std::endl;
+    //std::cerr << "Exception info: " << exceptStr[type] << std::endl;
+    //std::cerr << "Exception thrown by instruction: ";
+    //if ( isDebug ){
+    //    // if we are in debug mode show corresponding line
+    //    size_t lineNum = insNumMap[ currentInsNumber ];
+    //    std::cerr << srcCode[ lineNum ] << std::endl;
+    //    std::cerr << "At line : " << std::dec << lineNum << std::endl; 
+    //    
+    //} else {
+    //    std::cerr<< "0x" << std::hex << currentIns << std::endl;
+    //}
+    //std::cerr << std::endl;
 }
 
 
@@ -194,6 +167,10 @@ Memory::Memory ( size_t bytes, size_t wordSize ):\
     assert( heapStart );
 }
 
+Memory :: ~Memory(){
+    delete []vals;
+}
+
 Word Memory::endWord(){ 
     /* 
      * Here, ( byteCount - 1 ) is the array index of the final byte
@@ -207,9 +184,6 @@ Word Memory::endWord(){
     return  ( ALIGN_DOWN( byteCount - 1 , 4 ) ) & ( WORD_MAX );
 }
 
-void Memory::dealloc(){
-    delete []vals;
-}
 
 
 inline void Memory::set(byte b ){
@@ -266,10 +240,11 @@ Word getHalfWord(byte *b){
 
 
 Machine::Machine (size_t bytes):\
-memory(bytes,WORD_SIZE),\
-pc(memory.textStart),\
-basePC(pc),\
-isDebug(false){
+    memory(bytes,WORD_SIZE),\
+    pc(memory.textStart),\
+    basePC(pc),\
+    isDebug(false)\
+    {
     addFunctions();
 }
 
@@ -350,6 +325,7 @@ void Machine::readDebugInfo(std::ifstream &inFile ){
     delete temp;
 }
 
+#if 0
 
 void Machine::loadProgram(const char *path){
     assert( path );
@@ -360,7 +336,7 @@ void Machine::loadProgram(const char *path){
         return ;
     }
     MainHeader mheader;
-    ProgHeader pheader;
+    ProgramHeader pheader;
     inFile.read((char *)&mheader, sizeof(MainHeader));
     inFile.read( (char *)&pheader, sizeof(ProgHeader));
     size_t len = pheader.progSize;
@@ -396,6 +372,7 @@ bool Machine::load( const char *path ){
     pc = memory.textStart;        
     return true;
 }
+#endif
 
 
 #define NEW_EXCEPTION(a,b) ( exceptionMap[a] = std::string (b) )
@@ -408,7 +385,6 @@ void init(){
 }
 
 
-#define FUNC(w) ( getBits(w,5,0) )
 
 void Machine::executeIns(Word w){
     currentIns = w;
@@ -452,6 +428,8 @@ void Machine::execute(){
         currentIns = getWord( memory.vals + pc ); 
     }
 }
+
+
 
 
 void printRange(const byte *str, AppendBuffer &buff, size_t start, size_t end){
@@ -695,97 +673,18 @@ void Machine::test(){
     testBranch(testMachine);
 //    testMachine.dumpMem("./memDump.dump");
     testProcedure(testMachine);
-    testMachine.memory.dealloc();
 }
 
 
-const char *splitPath(const char *fullPath ){
-  // fullPath = ~/random/random/zz.c
-  // output = ~/random/random
-#if defined(_WIN32)
-    char delim = '\\';
-#else
-    char delim = '/';
-#endif
-    size_t len = strlen(fullPath);
-    const char *s = nullptr;
-    for ( s = fullPath + len - 1; s != fullPath && *s!=delim ; s-- );
-    return s;    
-}
 
-void directorTest(){
-    const char d[] = "$PROJECT/DUMP/dump/.zz.c";
-    const char *s = splitPath(d);
-    std::string fileName( (s == d )?d:(s+1) );
-    std::string directory("");
-    if ( s != d ){
-        for ( const char *x = d; x != ( s + 1 ) ; x++ ){
-            directory += (*x);
-        }
-    } else {
-        directory = "./";
+void Machine::loadProgram(const char *text, size_t size ){
+    // reads size byte from text, checking for errors
+    if ( size >= memory.textSize ){
+        throw MachineException("Program is too long for the allocated text Area.",LARGEPROG);
     }
-    assert( directory == "$PROJECT/DUMP/dump/");
-    assert( fileName == ".zz.c" );
-}
-
-int main(int argc, char *argv[] ){
-    Machine :: test();
-    assert( ALIGN_UP(4,32) == 32 );
-    assert( ALIGN_DOWN(127,32) == 96 );
-    assert( ALIGN_DOWN(31,4) == 28 );
-    directorTest();
-    if ( argc < 2 ){
-        std::cout << "Please input a file" << std::endl;
-        return 1;
-    }
-    /*
-     * We assume the arguments to be in following format
-     * ./vm <file_path> -[args] <value related to the arg>
-     * so, argv[1] is always the file path
-     */
-    const char *filePath = argv[1];
-    const char *split  = splitPath(filePath);
-    const char *dumpPath = nullptr;
-    bool isDump = false;
-    std::string dump("");
-    std::string fileName( ( split == filePath )?filePath:(split+1) );
-    std::string fileDirectory("");
-    if ( split != filePath ){
-        for ( const char *x = filePath; x != (split+1) ; x++ ){
-            fileDirectory += (*x);
-        }
-    } 
-    
-    for ( int i = 2; i < argc ; i++  ){
-        std::string str(argv[i]);
-        if ( str == "-d" ){
-            if ( i + 1 < argc ){
-                dumpPath = argv[i+1];
-                i++;
-            }
-        } else {
-            std::cerr << "Unrecognized argument \'" << argv[i+1] << "\'" << std::endl;
-        }
-    }
-
-    if ( dumpPath ){
-        isDump = true;
-        dump = dumpPath;
-        struct stat s;
-        stat(dumpPath,&s);
-        if ( S_ISDIR(s.st_mode) ){
-            dump += fileName;
-        }
-    }
-    errBuff = new char[ERR_BUFF_SIZE];
-    init();
-    Machine m(1024 * sizeof(Word) );
-    if ( m.load(filePath) ){
-        m.execute();
-        if ( isDump ){
-            m.dumpMem(dump.c_str());
-        }
-    }
-    delete []errBuff;
+    memcpy( memory.vals + memory.textStart, text, size );
+    memset( reg, 0, sizeof(Word) * REG_COUNT );
+    reg[SP] = memory.endWord(); 
+    reg[GP] = memory.staticStart;
+    pc = memory.textStart;        
 }
