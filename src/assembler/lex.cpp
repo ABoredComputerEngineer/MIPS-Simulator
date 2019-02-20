@@ -1,5 +1,6 @@
 #include "common.hpp"
 #include "lex.hpp"
+extern std::vector < ErrorInfo > errorInfo; // defined in common.cpp
 using std::string;
 Lexer :: Lexer ( const char *x ): stream( x ),line_start(x),line(1){
     str.reserve(256);
@@ -66,7 +67,11 @@ void Lexer::scanInt( char *buff ){
     while ( digitMap.find(*stream) != digitMap.end() ){//While there is a valid digit
         int digit = digitMap[*stream];
         if ( digit >= base ){
-            std::cerr << "Invalid digit for the given base!\n" << std::endl;
+			errorInfo.push_back( ErrorInfo (\
+			ErrorInfo::ErrorLocation::ERR_LEXER,\
+		    line,insString(),\
+			"Invalid digit for the given base" ) ); 
+//            std::cerr << "Invalid digit for the given base!\n" << std::endl;
             break;
         }
         val = val * base + digitMap[*stream];
@@ -89,6 +94,7 @@ void Lexer::nextInstruction(char *buff){
                     }while( 0 )
 
 void Lexer :: next (char *buff){
+	std::string s;
     switch ( *stream ){
         case '#': // '#' is going to denote start of a line comment
             while ( *stream && *stream != '\n' ){
@@ -197,8 +203,12 @@ void Lexer :: next (char *buff){
         case '>':
             *buff++ = *stream++; 
             if ( *stream != '>' ){
-                std::cerr << "At line: " << currentPos().row << std::endl;
-                std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
+				errorInfo.push_back (ErrorInfo (ErrorInfo::\
+				ErrorLocation::ERR_LEXER,\
+				line, insString(),\
+				"Undefined token") );
+                //std::cerr << "At line: " << currentPos().row << std::endl;
+                //std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
                 while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
                     stream++;
                 }
@@ -211,8 +221,12 @@ void Lexer :: next (char *buff){
         case '<':
             *buff++ = *stream++; 
             if ( *stream != '<' ){
-                std::cerr << "At line: " << currentPos().row << std::endl;
-                std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
+                errorInfo.push_back (ErrorInfo (ErrorInfo::\
+				ErrorLocation::ERR_LEXER,\
+				line, insString(),\
+				"Undefined token") );
+				//std::cerr << "At line: " << currentPos().row << std::endl;
+                //std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
                 while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
                     stream++;
                 }
@@ -227,8 +241,12 @@ void Lexer :: next (char *buff){
             kind = TOKEN_END;
             break;
         default:
-            std::cerr << "At line: " << currentPos().row << std::endl;
-            std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
+			errorInfo.push_back (ErrorInfo (ErrorInfo::\
+			ErrorLocation::ERR_LEXER,\
+			line, insString(),\
+			"Undefined token") );
+            //std::cerr << "At line: " << currentPos().row << std::endl;
+            //std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
             kind = TOKEN_BAD;
             while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
                 stream++;

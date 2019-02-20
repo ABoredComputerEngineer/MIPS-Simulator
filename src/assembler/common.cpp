@@ -256,3 +256,23 @@ char *AppendBuffer::appendn( size_t size, const char *x ){
     len += size;
     return buff;
 }
+
+ErrorInfo :: ErrorInfo (){}
+
+ErrorInfo :: ErrorInfo ( ErrorInfo::ErrorLocation loc, size_t lineNumber, const char *line, const char *err ):\
+		location(loc),\
+		lineNumber( lineNumber ),\
+		lineStr( line ),\
+		errInfo( err )
+{}
+ErrorInfo :: ErrorInfo ( ErrorInfo::ErrorLocation loc, size_t lineNumber, const std::string &line, const char *err ):\
+		location(loc),\
+		lineNumber( lineNumber ),\
+		lineStr( line ),\
+		errInfo( err )
+{}
+
+
+
+std::vector < ErrorInfo > errorInfo( 100 );
+	
