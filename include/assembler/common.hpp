@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
+#include <vector>
 typedef long int Integer;
 
 struct Instruction {
@@ -100,6 +101,22 @@ struct AppendBuffer {
     char *append(const char *fmt, ... );
     char *appendn(size_t size, const char *s );
     inline char *getBuff() { return buff; }
+};
+
+struct ErrorInfo {
+	enum ErrorLocation {
+		ERR_LEXER,
+		ERR_PARSER,
+		ERR_GENERATOR,
+	};
+	ErrorLocation location;
+	size_t lineNumber;
+	std::string lineStr;
+	std::string errInfo;
+	
+	ErrorInfo ();	
+	ErrorInfo ( ErrorLocation loc, size_t lineNum, const char *line, const char *err );	
+	ErrorInfo ( ErrorLocation loc, size_t lineNum, const std::string &str, const char *err );	
 };
 
 #endif // COMMON_HPP
