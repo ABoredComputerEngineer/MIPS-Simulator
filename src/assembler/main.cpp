@@ -39,7 +39,7 @@ char *formatErr( const char *fmt, ... ){
 
 bool isDirectory ( const char *path ){
     #ifdef __linux__
-    struct stat s;
+    struct stat s = {};
     stat( path, &s );
     return S_ISDIR(s.st_mode);
     #else
@@ -69,7 +69,7 @@ char *loadProgram(const char *path){
 
 
 bool assemble(const char *inPath, const char *outPath, bool isDump, const char *dumpPath){
-    string outFile( outPath );
+    string outFile( ( outPath )?( outPath ):"" );
     labelMap.clear();
     if ( isDirectory(outPath) ){
         outFile += "test.bin";
@@ -84,8 +84,8 @@ bool assemble(const char *inPath, const char *outPath, bool isDump, const char *
 
 
     Generator gen(content, inPath, true);
-    gen.parseFile();
-    if ( !gen.isParseSuccess() ){
+    bool success = gen.parseFile();
+    if ( !success  ){
         return false;
     }
     gen.encode();
@@ -126,9 +126,9 @@ const char *splitPath(const char *fullPath, char delim ){
 
 int main(int argc, char *argv[] ){
     initialize_assembler();
-    Lexer::test();
-    Parser::test();
-    Generator::test();
+    //Lexer::test();
+    //Parser::test();
+    //Generator::test();
     if ( argc < 2 ){
         std::cout << "Please input a file" << std::endl;
         return 1;
@@ -180,5 +180,11 @@ int main(int argc, char *argv[] ){
         outFile = outPath;
     }
     assemble( filePath, outFile.c_str(), isDump, dumpPath );
+    for ( size_t i = 0; i < errorList.size(); i++ ){
+        std::cerr << "At Line : " << errorList[i].lineNumber << std::endl;
+        std::cerr << "Instruction : " << errorList[i].lineStr<< std::endl;
+        std::cerr << "Error: " << errorList[i].errInfo<< std::endl;
+
+    }
     delete []errBuff;
 }

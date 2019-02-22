@@ -100,6 +100,7 @@ struct AppendBuffer {
     void grow(size_t size);
     char *append(const char *fmt, ... );
     char *appendn(size_t size, const char *s );
+    inline void clear(){ len = 0 ;}
     inline char *getBuff() { return buff; }
 };
 
@@ -118,5 +119,6 @@ struct ErrorInfo {
 	ErrorInfo ( ErrorLocation loc, size_t lineNum, const char *line, const char *err );	
 	ErrorInfo ( ErrorLocation loc, size_t lineNum, const std::string &str, const char *err );	
 };
+
 
 #endif // COMMON_HPP

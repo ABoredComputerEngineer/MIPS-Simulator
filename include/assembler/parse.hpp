@@ -2,9 +2,47 @@
 
 #define PARSE_HPP
 #include "common.hpp"
+#include "lex.hpp"
 #include <cstring>
+
+class InstructionException{
+    enum Type { 
+        INVALID_ARGUMENTS,
+    };
+    Type type;
+    InstructionException ( Type type );
+};
+
+class RegisterException{
+    public:
+    enum Type {
+        INVALID, // register name is invalid e.g. $x0
+        OVERFLOW, // more registers than required
+        EXPECTED, // expected register but got something else
+    };
+    Type type;
+    RegisterException ( Type  type );
+};
+
+class InstructionEndException { };
+
+class ExpressionException {
+    public:
+    enum Type {
+        INVALID_OP,
+        INVALID_TOKEN,
+    };
+    Type type;
+    Lexer::TokenKind kind;
+    ExpressionException (Type,Lexer::TokenKind k);
+};
+
+class LabelError{
+};
+
+
 struct ParseObj {
-    const Instruction ins;
+    Instruction ins;
     std::string insString;
     size_t line;
     size_t insNumber;
@@ -18,11 +56,11 @@ struct ParseObj {
         struct {
             Integer rs,rt;
             mutable Integer offset; // The value is either given by the user or is set during code generation
-            const char *label;
+            char label[32];
         } Branch;
         struct {
             mutable Integer addr;
-            const char *label;
+            char label[32];
         } Jump;
         struct {
             Integer rs; // for 'jr' instructions. this might be merged with other structure in future versions
@@ -56,13 +94,15 @@ class Parser {
     bool err;
     bool parseSuccess;
     size_t insCount;
-    ParseObj *parseIns( );
-    ParseObj *parseRtype();
-    ParseObj *parseItype();
-    ParseObj *parseLS();
-    ParseObj *parseBranch();
-    ParseObj *parseJump();
-    ParseObj *parseJr();
+    bool end; // true if done parsing
+    AppendBuffer errorBuffer;
+    ParseObj parseIns( );
+    ParseObj parseRtype();
+    ParseObj parseItype();
+    ParseObj parseLS();
+    ParseObj parseBranch();
+    ParseObj parseJump();
+    ParseObj parseJr();
     int parseRegister();
     int parseInt();
     int parseExpr();
@@ -73,16 +113,23 @@ class Parser {
     void genParseError();
     void displayError(const char *fmt,...);
     void parseInsEnd();
+    void genRegisterError( RegisterException & );
+    void genLexerMatchError( LexerMatchException &);
+    void genInstructionEndException();
+    void genExpressionError( ExpressionException &);
+    void genlabelError();
     public:
     Parser ( const char *p );
-    inline bool isSuccess(){ return parseSuccess ;}
+    inline bool isSuccess(){ return parseSuccess;} 
     void init(const char *p);
-    ParseObj *parse();
+    ParseObj parse();
     static void test();
     static void exprTest();
     inline size_t getInsCount(){ return insCount; }
+    inline bool isEnd(){ return end; }
 };
 
 extern strToIntMap regMap; // defined in common.cpp
 extern strToInsMap insMap;  // defined in common.cpp
+extern std::vector < ErrorInfo > errorList; // defined in common.cpp
 #endif

@@ -2,9 +2,13 @@
 
 #define GEN_HPP
 #include "common.hpp"
+#include "common.hpp"
+#include "lex.hpp"// for the parser
+#include "parse.hpp"
 #include <vector>
 #include <fstream>
 #include <climits>
+#include <cassert>
 typedef uint32_t Code;
 #define ORIGIN 00000 
 enum Limits {
@@ -32,6 +36,25 @@ enum Limits {
 #define IS_UNSIGNED_16( x ) ( !( (x) & ~SIXTEEN_BIT_MAX ) )
 #define IS_UNSIGNED_26( x ) ( !( (x) & ~TWENTY_SIX_BIT_MAX ) )
 #define IS_SIGNED_16(x) ( ( ( x ) >= INT16_MIN ) && ( ( x ) <= INT16_MAX ) )
+
+class GenError{
+    public:
+    enum Type {
+        NO_LABEL,
+        BRANCH_OFFSET_LARGE,
+        JUMP_ADDR_LARGE,
+        NO_INS,
+        SHAMT_FIELD,
+        IMM_FIELD,
+    };
+    Type type;
+    const size_t line;
+    const std::string &ins;
+    const char *label;
+    GenError( Type t, const size_t num, const std::string &s , const char *arg = nullptr);
+};
+
+
 
 struct MainHeader{
     char  isa[16]; // string containing the isa that generated the file
@@ -65,13 +88,14 @@ struct LineMapEntry {
 };
 class Generator {
     std::vector <Code> prog;
-    std::vector <ParseObj *> objs;
+    std::vector <ParseObj > objs;
     const char *file;
     const char *srcPath;
     bool parseSuccess;
     bool genSuccess;
     bool debugMode;
     size_t totalIns;
+    AppendBuffer errorBuffer;
     AppendBuffer dumpBuff;
     Code encodeRtype(const ParseObj *);
     Code encodeItype( const ParseObj *);
@@ -89,6 +113,7 @@ class Generator {
     void genMainHeader(std::ofstream &outFile);
     void genProgHeader(std::ofstream &outFile, size_t progSize);
     void genDebugSection( std::ofstream &outFile );
+    void genError(GenError &);
     public:
     Generator (const char *content, const char *src, bool debug );
     ~Generator () ;

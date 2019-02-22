@@ -1,6 +1,3 @@
-#include "common.hpp"
-#include "lex.hpp"// for the parser
-#include "parse.hpp"
 #include "gen.hpp"
 using std::vector;
 using std::string;
@@ -15,9 +12,38 @@ file(content),srcPath(src),parseSuccess(true),genSuccess(true),debugMode(debug),
 }
 
 Generator::~Generator () {
-    for ( auto iter = objs.begin(); iter != objs.end(); iter++ ){
-        delete *iter;
+}
+
+GenError :: GenError ( GenError :: Type t,const size_t s,const std::string &insString, const char *arg) : type(t), line(s),ins(insString), label(arg){
+}
+
+void Generator :: genError ( GenError &error ){
+    errorBuffer.clear();
+    switch ( error.type ){
+        case GenError::NO_LABEL:
+            assert( error.label );
+            errorBuffer.append( "Label %s not found!", error.label );
+            break;
+        case GenError::BRANCH_OFFSET_LARGE:
+            errorBuffer.append( "Branch offset address is too large/small for a 16-bit field( min %d, max %d ).", INT16_MIN, INT16_MAX );
+            break;
+        case GenError::JUMP_ADDR_LARGE:
+            errorBuffer.append( "Jump offset address is too large/small for a 26-bit field( min %d, max %d ).", INT16_MIN, INT16_MAX );
+            break;
+        case GenError::NO_INS:
+            errorBuffer.append("Unidentified pseudo instruction %s.", error.label );
+            break; 
+        case GenError::SHAMT_FIELD:
+            errorBuffer.append("Value for shamt field exceeds 5-bits ( max %d ).", FIVE_BIT_MAX );
+            break;
+        case GenError::IMM_FIELD: 
+            errorBuffer.append("Value for immediate field exceeds 16-bits ( max %d ).", SIXTEEN_BIT_MAX);
+            break;
     }
+    errorList.push_back( ErrorInfo( ErrorInfo::ErrorLocation :: ERR_GENERATOR,\
+        error.line,\
+        error.ins,\
+        errorBuffer.getBuff()));
 }
 /*
  * -------------------------------------------------
@@ -42,14 +68,16 @@ bool Generator:: resolveBranch(const ParseObj *p) {
     if ( p->props.Branch.label ){
         auto search = labelMap.find( string (p->props.Branch.label) );
         if ( search == labelMap.end() ){ // Label not found
-            displayError( p, "Label %s not found!", p->props.Jump.label );
+//            displayError( p, "Label %s not found!", p->props.Jump.label );
+            throw GenError( GenError::Type::NO_LABEL, p->line, p->insString, p->props.Branch.label );
             return false;
         } else {
             p->props.Branch.offset = ( search->second - p->insNumber );
         }
     }
     if ( !IS_SIGNED_16( p->props.Branch.offset ) ){
-        displayError(p, "Branch offset address is too large/small for a 16-bit field( min %d, max %d ).", INT16_MIN, INT16_MAX );
+        throw GenError( GenError::Type::BRANCH_OFFSET_LARGE, p->line, p->insString);
+//        displayError(p, "Branch offset address is too large/small for a 16-bit field( min %d, max %d ).", INT16_MIN, INT16_MAX );
         return false; 
     }
     return true;
@@ -59,7 +87,8 @@ bool Generator :: resolveJump(const ParseObj *p){
     if ( p->props.Jump.label ){
         auto search = labelMap.find( string ( p->props.Jump.label) );
         if ( search == labelMap.end() ){
-            displayError( p , "Label %s not found!", p->props.Jump.label );
+            throw GenError( GenError::Type::NO_LABEL, p->line, p->insString, p->props.Jump.label );
+            //displayError( p , "Label %s not found!", p->props.Jump.label );
             return false;
         } else {
             size_t tmp = search->second  + ( ORIGIN >> 2 ) ; 
@@ -75,7 +104,8 @@ bool Generator :: resolveJump(const ParseObj *p){
         }
     }
     if ( !IS_UNSIGNED_26( p->props.Jump.addr ) ){
-        displayError( p, "Jump address is too large!");
+        throw GenError( GenError::Type::JUMP_ADDR_LARGE, p->line, p->insString);
+//        displayError( p, "Jump address is too large!");
         return false;
     }
     return true;
@@ -186,7 +216,8 @@ Code Generator :: encodePtype ( const ParseObj *p ){
                 break;
         }
     }
-    displayError(p,"Unidentified pseudo instruction %s.", p->ins.str.c_str());
+    throw GenError( GenError::Type::NO_INS, p->line, p->insString, p->ins.str.c_str() );
+//    displayError(p,"Unidentified pseudo instruction %s.", p->ins.str.c_str());
     return 0; 
 }
 #if 0
@@ -208,44 +239,50 @@ Code Generator::encodeObj( const ParseObj *p){
 #endif
 
 bool Generator :: encode () {
-    for ( auto iter = objs.begin(); iter != objs.end() ; iter ++ ){
+    for ( size_t i = 0; i < objs.size(); i++ ){
         Code code;
-        ParseObj *p = *iter;
-        if ( p->ins.insClass == Instruction::RTYPE ){
-            if ( p->ins.isShiftLogical() && !IS_UNSIGNED_5(p->props.Rtype.shamt) ){
-                    displayError(p, "Value for shamt field exceeds 5-bits ( max %d ).", FIVE_BIT_MAX );
+        ParseObj *p = &objs[i];
+        try {
+            if ( p->ins.insClass == Instruction::RTYPE ){
+                if ( p->ins.isShiftLogical() && !IS_UNSIGNED_5(p->props.Rtype.shamt) ){
+                        throw GenError( GenError::Type::SHAMT_FIELD, p->line, p->insString );
+                }
+                code = encodeRtype( p );
+            } else if ( p->ins.insClass == Instruction :: ITYPE ){
+                if ( !IS_SIGNED_16(p->props.Itype.addr) ){
+                        throw GenError( GenError::Type::IMM_FIELD, p->line, p->insString );
+//                    displayError(p, "Value for Immediate field exceeds 16-bits ( min %d, max %d ).", INT16_MIN, INT16_MAX );
+                }
+                code = encodeItype(p);
+            } else if ( p->ins.insClass == Instruction :: BRTYPE){
+                resolveBranch(p);
+                code = encodeBranch(p);
+            } else if ( p->ins.insClass == Instruction :: JTYPE ){
+                resolveJump(p);
+                code = encodeJump(p);
+            } else if ( p->ins.insClass == Instruction:: PTYPE ){
+                code  = encodePtype(p);
+            } else {
+                throw GenError( GenError::Type::NO_INS, p->line, p->insString, p->ins.str.c_str() );
+//                displayError(p,"Invalid instruction %s.",p->ins.str.c_str());
             }
-            code = encodeRtype( p );
-        } else if ( p->ins.insClass == Instruction :: ITYPE ){
-            if ( !IS_SIGNED_16(p->props.Itype.addr) ){
-                displayError(p, "Value for Immediate field exceeds 16-bits ( min %d, max %d ).", INT16_MIN, INT16_MAX );
-            }
-            code = encodeItype(p);
-        } else if ( p->ins.insClass == Instruction :: BRTYPE){
-            resolveBranch(p);
-            code = encodeBranch(p);
-        } else if ( p->ins.insClass == Instruction :: JTYPE ){
-            resolveJump(p);
-            code = encodeJump(p);
-        } else if ( p->ins.insClass == Instruction:: PTYPE ){
-            code  = encodePtype(p);
-        } else {
-            displayError(p,"Invalid instruction %s.",p->ins.str.c_str());
+            prog.push_back(code);
+        }catch ( GenError &g ){
+             genError( g );
         }
-        prog.push_back(code);
     }
     return genSuccess;
 }
 
-bool Generator :: parseFile () {
+bool Generator :: parseFile() {
     try {
         if ( !file ){ throw "Generator has no file initialized!";}
     } catch ( const char *msg) {
         std::cerr << msg << std::endl;
     }
     Parser p(file);
-    ParseObj *obj = p.parse();
-    while ( obj != nullptr ){
+    ParseObj obj = p.parse();
+    while ( !p.isEnd() ){
         objs.push_back( obj );
         obj = p.parse();
     }
@@ -327,14 +364,14 @@ void Generator :: genProgHeader(std::ofstream &outFile, size_t progSize ){
 void Generator :: displayObjs(){
     for ( size_t i = 0; i < objs.size() ; i++ ){
         std::cout<<"Instruction Code: "<< std::endl << "0x"<< std::hex << prog[i] << std::endl;
-        objs[i]->display();
+        objs[i].display();
     }
 }
 
 size_t Generator :: genLineInfo(vector <LineMapEntry> &lineMap){
     for ( size_t i = 0; i < objs.size(); i++ ){
-        ParseObj *p = objs[i];
-        lineMap.push_back( (LineMapEntry){p->line,prog[i],i+1} );
+        ParseObj p = objs[i];
+        lineMap.push_back( (LineMapEntry){p.line,prog[i],i+1} );
     }
     return lineMap.size();
 }
@@ -343,7 +380,7 @@ size_t Generator :: genLineInfo(vector <LineMapEntry> &lineMap){
 void Generator :: dumpObjs(){
     for ( size_t i = 0; i < objs.size(); i++ ){
         dumpBuff.append("Instruction Code:\n 0x%llx\n",prog[i]);
-        objs[i]->dumpToBuff(dumpBuff);
+        objs[i].dumpToBuff(dumpBuff);
     }
 }
 
@@ -365,6 +402,7 @@ void Generator :: dumpToFile( const char *path ){
     outFile.close();
 }
 
+#if 0
 void Generator :: test (){
     assert( IS_SIGNED_16( -8 ) );
     assert( IS_SIGNED_16( 123 ) );
@@ -387,7 +425,9 @@ void Generator :: test (){
     g.encode();
     for ( size_t i = 0; i < g.objs.size() ; i++ ){
         std::cout<<"Instruction Code: "<< "0x"<< std::hex << g.prog[i] << std::endl;
-        g.objs[i]->display();
+        g.objs[i].display();
     }
     (void)x;
 }
+
+#endif

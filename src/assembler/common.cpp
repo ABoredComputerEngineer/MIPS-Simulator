@@ -274,5 +274,5 @@ ErrorInfo :: ErrorInfo ( ErrorInfo::ErrorLocation loc, size_t lineNumber, const 
 
 
 
-std::vector < ErrorInfo > errorInfo( 100 );
+std::vector < ErrorInfo > errorList;
 	

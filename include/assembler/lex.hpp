@@ -1,5 +1,5 @@
 #ifndef LEX_HPP
-
+#include "common.hpp"
 #define LEX_HPP
 struct Position {
     size_t row, col;
@@ -64,6 +64,7 @@ struct Lexer{
     void previousIns(char *);
     std::string insString();
     inline size_t getLineNum( ){ return line; }
+    std::unordered_map< int, std::string> tokenMap;
 };
 inline bool Lexer::isIns(){ return kind == TOKEN_INSTRUCTION; }
 inline bool Lexer::isToken( TokenKind k ){ return kind == k; }
@@ -77,6 +78,13 @@ inline bool Lexer::isMulOp(){
 inline bool Lexer::isUnaryOp(){
     return ( kind == TOKEN_COMPLEMENT || kind == TOKEN_NOT || kind == TOKEN_SUB );
 }
+
+
+class LexerMatchException {
+    public:
+        Lexer::TokenKind expected,present;
+        LexerMatchException ( Lexer::TokenKind exp, Lexer::TokenKind got );
+};
 extern charToIntMap digitMap; // defined in common.cpp 
 extern strToBoolMap keywordMap; // defined in common.cpp
 #endif

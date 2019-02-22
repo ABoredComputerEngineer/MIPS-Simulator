@@ -1,9 +1,34 @@
-#include "common.hpp"
 #include "lex.hpp"
-extern std::vector < ErrorInfo > errorInfo; // defined in common.cpp
+extern std::vector < ErrorInfo > errorList; // defined in common.cpp
 using std::string;
+
+LexerMatchException :: LexerMatchException ( Lexer::TokenKind e, Lexer::TokenKind p ):\
+    expected(e), present(p){}
+
 Lexer :: Lexer ( const char *x ): stream( x ),line_start(x),line(1){
     str.reserve(256);
+    tokenMap[ TOKEN_BAD ] = "TOKEN_BAD";
+    tokenMap[ TOKEN_REGISTER ]  = "Register";
+    tokenMap[ TOKEN_INSTRUCTION ] = "Instruction";
+    tokenMap[ TOKEN_INT ] = "Integer/Expression";
+    tokenMap[ TOKEN_NAME ] = "Name";
+    tokenMap[ TOKEN_LPAREN ] = "(";
+    tokenMap[ TOKEN_RPAREN ] = ")";
+    tokenMap[ TOKEN_COMMA ] = ",";
+    tokenMap[ TOKEN_COLON ] = ":";
+    tokenMap[ TOKEN_END ] = "End of Line (;)";
+    tokenMap[ TOKEN_NEWLINE ] = "\\n";
+    tokenMap[ TOKEN_ADD ] = "+";
+    tokenMap[ TOKEN_SUB ] = "-";
+    tokenMap[ TOKEN_MUL ] = "*";
+    tokenMap[ TOKEN_DIV ] = "/";
+    tokenMap[ TOKEN_LSHIFT ] = "<<";
+    tokenMap[ TOKEN_RSHIFT ] = ">>";
+    tokenMap[ TOKEN_BAND ] = "&";
+    tokenMap[ TOKEN_BOR ] = "|";
+    tokenMap[ TOKEN_BXOR ] = "^";
+    tokenMap[ TOKEN_COMPLEMENT ] = "~";
+    tokenMap[ TOKEN_NOT ] = "!";
 }
 string Lexer :: insString(){
     string str;
@@ -40,7 +65,11 @@ bool Lexer::match( TokenKind k , char *buff){
 }
 
 bool Lexer::expect(TokenKind k , char *buff ){
-    return match(k,buff);
+    if ( match(k,buff) ){
+        return true;
+    } else {
+        throw LexerMatchException( k, kind);
+    }
 }
 
 bool Lexer::matchInsEnd(char *buff ){
@@ -67,11 +96,10 @@ void Lexer::scanInt( char *buff ){
     while ( digitMap.find(*stream) != digitMap.end() ){//While there is a valid digit
         int digit = digitMap[*stream];
         if ( digit >= base ){
-			errorInfo.push_back( ErrorInfo (\
+			errorList.push_back( ErrorInfo (\
 			ErrorInfo::ErrorLocation::ERR_LEXER,\
 		    line,insString(),\
 			"Invalid digit for the given base" ) ); 
-//            std::cerr << "Invalid digit for the given base!\n" << std::endl;
             break;
         }
         val = val * base + digitMap[*stream];
@@ -203,12 +231,10 @@ void Lexer :: next (char *buff){
         case '>':
             *buff++ = *stream++; 
             if ( *stream != '>' ){
-				errorInfo.push_back (ErrorInfo (ErrorInfo::\
+				errorList.push_back (ErrorInfo (ErrorInfo::\
 				ErrorLocation::ERR_LEXER,\
 				line, insString(),\
 				"Undefined token") );
-                //std::cerr << "At line: " << currentPos().row << std::endl;
-                //std::cerr << "Unidentified token \'" << *stream <<"\'"  << std::endl;
                 while ( !isspace(*stream) ){ // ingnore all the non whitespace characters
                     stream++;
                 }
@@ -221,7 +247,7 @@ void Lexer :: next (char *buff){
         case '<':
             *buff++ = *stream++; 
             if ( *stream != '<' ){
-                errorInfo.push_back (ErrorInfo (ErrorInfo::\
+                errorList.push_back (ErrorInfo (ErrorInfo::\
 				ErrorLocation::ERR_LEXER,\
 				line, insString(),\
 				"Undefined token") );
@@ -241,7 +267,7 @@ void Lexer :: next (char *buff){
             kind = TOKEN_END;
             break;
         default:
-			errorInfo.push_back (ErrorInfo (ErrorInfo::\
+			errorList.push_back (ErrorInfo (ErrorInfo::\
 			ErrorLocation::ERR_LEXER,\
 			line, insString(),\
 			"Undefined token") );
