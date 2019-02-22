@@ -95,7 +95,7 @@ class Debugger {
      void continueExecution();
      RegisterInfo getRegisters();
      void display(const char *buff);
+     char* getMem(AppendBuffer &buff,size_t address, size_t bytes);
 };
 
-extern 
 #endif

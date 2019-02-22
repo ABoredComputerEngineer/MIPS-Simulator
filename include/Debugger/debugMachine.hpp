@@ -48,6 +48,7 @@ class DebugMachine : public Machine {
      inline Word getBasePC(){ return basePC; }
      RegisterInfo getRegisterInfo();
      inline ExceptionType getException(){ return type;}
+     inline byte* getMemAt( size_t address ) { return memory.vals + address; };
 };
 extern std::unordered_map < Machine::ExceptionType , std::string, ExceptionClassHash > exceptStr; // defined in debugMachine.cpp
 #endif

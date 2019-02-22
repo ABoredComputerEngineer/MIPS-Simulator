@@ -431,7 +431,9 @@ void Machine::execute(){
 
 
 
-
+/*
+ * Print bytes at str[start] to str[end] into the buffer buff
+ */
 void printRange(const byte *str, AppendBuffer &buff, size_t start, size_t end){
     int count = 1;
     for ( size_t i = start; i < end; i+=4 ){

@@ -250,6 +250,7 @@ enum ErrType{
     LARGEPROG = 0x10, // Signals if the program is too large to fit in the memory
     MEMEND = 0x20, // Signals if trying to write/read past the end of allocated memory
 };
+void printRange(const byte *str, AppendBuffer &buff, size_t start, size_t end);
 
 #define ERR_BUFF_SIZE 1024
 #endif

@@ -256,13 +256,9 @@ int Parser :: parseRegister(){
 
 int Parser::parseInt(){
     int x = 0;
-    try {
-        x = parseExpr();
-        lex.next( buff );
-        return x;
-    } catch ( ExpressionException &e ){
-        throw;
-    }
+    x = parseExpr();
+    //lex.next( buff );
+    return x;
     #if 0
     int i = 0;
     if ( lex.isToken(Lexer::TOKEN_INT) ){
