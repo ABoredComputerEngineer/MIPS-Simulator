@@ -256,3 +256,21 @@ void Debugger :: displayCurrentSource( ){
 }
 
 
+// Print 'bytes' number of byte into 'buff' from 'address' of the memory
+char* Debugger :: getMem(AppendBuffer &buff, size_t address, size_t bytes ){
+     byte *start = machine.getMemAt( address );
+     int count = 1;
+     for ( size_t i = 0; i < bytes; i+=4 ){
+         buff.append("0x%-5lx: ",address + i);
+         for ( size_t k = 0; k < 4 ; k++ ){
+             buff.append("%02x ",start[i + k] & 0xff );
+         }
+         buff.append("\t");
+         count++;
+         if ( count % 2 ) { count = 1; buff.append("\n");}
+     }
+     buff.append("\n"); 
+     return buff.getBuff();
+}
+
+

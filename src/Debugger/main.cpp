@@ -2,6 +2,7 @@
 // Run it as ./debug <program_name>
 #include <debug.hpp>
 
+AppendBuffer printBuffer;
 const std::string registerNames[] = {
     "$zero",
     "$at",
@@ -49,6 +50,17 @@ bool processCommand( Debugger &debug,const char *line ){
           debug.displayCurrentSource();
      } else if ( word == "exit" ){
           return true;
+     } else if ( word == "mem" ){
+          size_t addr = 0, count = 0;
+          stream >> addr;
+          stream >> count;
+          if ( stream ){
+               char *x = debug.getMem( printBuffer, addr, count );
+               std::cout << x ;
+          } else {
+               std::cout << "Error!" << std::endl << std::endl;
+          }
+          printBuffer.clearBuff();
      }
      return false;
 }
