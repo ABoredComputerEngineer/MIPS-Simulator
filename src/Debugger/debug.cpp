@@ -47,7 +47,7 @@ void BreakPoint::disable(){
 
 
 Debugger :: Debugger() : machine( 1024 ), currentLine( ){
-     srcCode.reserve( 1000 );
+     //srcCode.reserve( 1000 );
      breakPointList.reserve( 100 );
 }
 
@@ -63,7 +63,7 @@ void display( const char *str ){
      std::cout << str << std::endl;
 }
 
-const char *getExceptionString( DebugMachine::ExceptionType type ){
+const std::string *getExceptionString( DebugMachine::ExceptionType type ){
 #define PROCESS(x)  case x :  s = #x; break;
      static std::string s;
      switch ( type ){
@@ -77,7 +77,7 @@ const char *getExceptionString( DebugMachine::ExceptionType type ){
         PROCESS( Machine::ExceptionType::MEM_UNALIGNED_READ )
         PROCESS( Machine::ExceptionType::MEM_UNALIGNED_WRITE )
      }
-     return s.c_str();
+     return &s;
 #undef PROCESS
 }
 
@@ -95,9 +95,28 @@ void Debugger :: setBreakPoint( size_t x ){
      breakPointMap[ x ] = bp;     
 }
 
+ProgramException :: ProgramException () {}
+ProgramException :: ProgramException ( size_t addr, size_t ln, size_t code, const std::string *t, const std::string *inf ):\
+          pc( addr ),\
+          line( ln ),\
+          insCode( code ),\
+          type ( t ),\
+          exceptInfo( inf )
+{}
+
+void ProgramException :: set( size_t addr, size_t ln, size_t code, const std::string *t, const std::string *inf ){
+     pc = addr;
+     line = ln;
+     insCode = code;
+     type = t;
+     exceptInfo = inf;
+}
+
+     
+#if 0
 void Debugger :: printExceptionInfo(Machine::ExceptionType type){
      pBuffer.clearBuff();
-     size_t num = machine.getInsNum();
+     size_t num = machine.getCurrentInsNum();
      size_t line = insNumberToLineMap[ num ];
      assert( line );
      pBuffer.append("Exception raised by instruction at address 0x%lx.\n", machine.getPC() );
@@ -107,6 +126,11 @@ void Debugger :: printExceptionInfo(Machine::ExceptionType type){
      pBuffer.append("Exception Info: %s\n", exceptStr[ type ].c_str() ); 
      display( pBuffer.getBuff() );
 }
+#endif
+
+ProgramException &Debugger :: getExceptionInfo( ){
+     return exceptionInfo;
+}
 
 void Debugger :: printHaltedMessage(){
      pBuffer.clearBuff();
@@ -115,6 +139,7 @@ void Debugger :: printHaltedMessage(){
 }
 
 void Debugger :: singleStep(){
+     hasException = false;
      // check if the instruction to be executed has a breakpoint
      if ( breakPointMap.count( currentLine ) ){
           // there is a breakpoint
@@ -134,12 +159,25 @@ void Debugger :: singleStep(){
      }
      if ( machine.isExceptionRaised() ){
           auto sr = machine.getSR();
-          for ( size_t i = 1;\
-                    i <= static_cast<size_t>( Machine::ExceptionType::MEM_UNALIGNED_WRITE );\
-                    i <<= 1 ){
+          for ( size_t i = 1; i <= ( size_t )( Machine::ExceptionType::MEM_UNALIGNED_WRITE );i <<= 1 ){
                if ( sr & i ){
                     Machine::ExceptionType type = static_cast< Machine::ExceptionType >( i );
-                    printExceptionInfo(type);     
+                    size_t num = machine.getCurrentInsNumber();
+                    size_t line = insNumberToLineMap[ num ];
+                    size_t code = lineToInsMap[ line ];
+                    exceptionInfo.set( machine.getPC(),\
+                              line,\
+                              code,\
+                              getExceptionString( type ),\
+                              &exceptStr[type] );
+                    hasException = true;
+#if 0
+                    pBuffer.append("Exception raised by instruction at address 0x%lx.\n", machine.getPC() );
+                    pBuffer.append("Instrucion: %s\n",srcCode[line -1].c_str() );
+                    pBuffer.append("Instruction Code: %llx\n",lineToInsMap[ line ] );
+                    pBuffer.append("Exception Type: %s\n", getExceptionString( type ) );
+                    pBuffer.append("Exception Info: %s\n", exceptStr[ type ].c_str() ); 
+#endif
                }
           }
           machine.clearSR();
@@ -149,22 +187,28 @@ void Debugger :: singleStep(){
 }
 
 void Debugger :: continueExecution (){
+     hasException = false;
      machine.executeDebug();
      if ( machine.isHalted() ){
           return;
      }
      if ( machine.isExceptionRaised() ){
+          hasException = true;
+
+          size_t num = machine.getCurrentInsNumber();
+          size_t line = insNumberToLineMap[ num ];
+          size_t code = lineToInsMap[ line ];
           auto type = machine.getException();
           if ( type == Machine::ExceptionType :: TRAP ){
-               size_t insNumber = machine.getCurrentInsNumber();
-               size_t line = insNumberToLineMap[ insNumber ];
                currentLine = line;
-               display( "Breakpoint occured! " );
-               machine.clearSR();
-               machine.setExceptionFlag(false);
-          } else {
-               printExceptionInfo( type );
-          }
+          } 
+          exceptionInfo.set( machine.getPC(),\
+                    line,\
+                    code,\
+                    getExceptionString( type ),\
+                    &exceptStr[type] );
+          machine.clearSR();
+          machine.setExceptionFlag(false);
      }
 }
 
@@ -181,17 +225,17 @@ void Debugger :: generateMaps( const char *buff ){
 }
 
 void Debugger :: parseDebugInfo(const char *buff){
-     std::ifstream inFile( dbgSection.srcPath, std::ios::binary | std::ios::in );
-     if ( !inFile.is_open() || !inFile.good() ){
-          std::ostringstream stream;
-          stream << dbgSection.srcPath<< ":" << strerror( errno ) << std::endl;
-          stream << "Failed to load the source program" << std::endl;
-          throw OpenException( stream.str() ); 
-     }
-     std::string s; 
-     while ( getline( inFile, s ) ){
-          srcCode.push_back( s );
-     }
+     //std::ifstream inFile( dbgSection.srcPath, std::ios::binary | std::ios::in );
+     //if ( !inFile.is_open() || !inFile.good() ){
+     //     std::ostringstream stream;
+     //     stream << dbgSection.srcPath<< ":" << strerror( errno ) << std::endl;
+     //     stream << "Failed to load the source program" << std::endl;
+     //     throw OpenException( stream.str() ); 
+     //}
+     //std::string s; 
+     //while ( getline( inFile, s ) ){
+     //     srcCode.push_back( s );
+     //}
      generateMaps(buff);
 }
 
@@ -233,27 +277,6 @@ void Debugger :: loadProgram(const char *buff, size_t size ){
 //    Word gp, sp, fp, ra;
 //};
 //
-
-void Debugger :: displaySource( size_t start , size_t end ){
-     pBuffer.clearBuff();
-#if 0
-     for ( size_t i = 0; i <= 10 ; i++ ){
-          pBuffer.append("\n\n\n");
-     }
-#endif
-     assert( start > 0 );
-     for ( size_t i = start; i <= end; i++ ){
-          pBuffer.append("%-3d| %s%s\n",i,(currentLine!=i)?"  ":">>",srcCode[i-1].c_str() ); 
-     }
-     display( pBuffer.getBuff() );
-}
-
-void Debugger :: displayCurrentSource( ){
-     long long current = static_cast< long long >( currentLine );
-     long long start = ( current - 3 <= 0 )? 1 : ( current - 3 ); 
-     long long end = ( current + 3 > (long long)srcCode.size() )? ( srcCode.size() )  : ( current + 3 ); 
-     displaySource( start, end );
-}
 
 
 // Print 'bytes' number of byte into 'buff' from 'address' of the memory

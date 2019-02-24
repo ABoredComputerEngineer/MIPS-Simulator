@@ -1,8 +1,8 @@
 // Contains code for the command line interface of the debugger
 // Run it as ./debug <program_name>
 #include <debug.hpp>
-
 AppendBuffer printBuffer;
+std::vector < std::string > srcCode;
 const std::string registerNames[] = {
     "$zero",
     "$at",
@@ -14,6 +14,7 @@ const std::string registerNames[] = {
     "$k0", "$k1",
     "$gp", "$sp", "$fp", "$ra",
 };
+
 void displayRegisters( const RegisterInfo *regs ){
      const Word *w = reinterpret_cast< const Word * >( regs );
      size_t len =  sizeof( RegisterInfo )/ sizeof(Word);
@@ -21,6 +22,28 @@ void displayRegisters( const RegisterInfo *regs ){
           printf("%-6s = 0x%08x\n",registerNames[i].c_str(), w[i] );
      }
 }
+
+void displaySource( size_t currentLine,size_t start , size_t end ){
+     assert( start > 0 );
+     for ( size_t i = start; i <= end; i++ ){
+          printf("%-3zu| %s%s\n",i,(currentLine!=i)?"  ":">>",srcCode[i-1].c_str() ); 
+     }
+}
+
+void displayCurrentSource( size_t currentLine ){
+     long long current = static_cast< long long >( currentLine );
+     long long start = ( current - 3 <= 0 )? 1 : ( current - 3 ); 
+     long long end = ( current + 3 > (long long)srcCode.size() )? ( srcCode.size() )  : ( current + 3 ); 
+     displaySource(currentLine, start, end );
+}
+void printExceptionInfo(ProgramException &info ){
+     printf("Exception raised by instruction at address 0x%lx.\n",info.pc ); 
+     printf("Instrucion: %s\n",srcCode[info.line -1].c_str() );
+     printf("Instruction Code: 0x%lx\n",info.insCode );
+     printf("Exception Type: %s\n", info.type->c_str() );
+     printf("Exception Info: %s\n", info.exceptInfo->c_str() );
+}
+
 bool processCommand( Debugger &debug,const char *line ){
      std::string l( line );
      std::istringstream stream( l ); 
@@ -32,9 +55,10 @@ bool processCommand( Debugger &debug,const char *line ){
      } else if ( word == "step" ){
           debug.singleStep();
           if ( !debug.isHalted() ){
-               debug.displayCurrentSource();
-          } else {
-               debug.printHaltedMessage();
+               displayCurrentSource( debug.getLineNumber() );
+          } else if ( debug.isExceptionRaised() ) {
+               auto x = debug.getExceptionInfo();
+               printExceptionInfo( x );
           }
      } else if ( word == "break" ){
           int line;
@@ -47,7 +71,10 @@ bool processCommand( Debugger &debug,const char *line ){
           }
      } else if ( word == "continue" ){
           debug.continueExecution();
-          debug.displayCurrentSource();
+          if ( debug.isExceptionRaised() ){
+               printExceptionInfo( debug.getExceptionInfo() );
+          }
+          displayCurrentSource(debug.getLineNumber() );
      } else if ( word == "exit" ){
           return true;
      } else if ( word == "mem" ){
@@ -67,7 +94,7 @@ bool processCommand( Debugger &debug,const char *line ){
 void runDebugger (Debugger &debug){
      const char *line;
      bool isExit = false;
-     debug.displaySource( 1, 5 );
+     displaySource(1, 1, 5 );
      while ( !isExit && ( line = linenoise(">>") ) ){
           isExit = processCommand( debug,line );
           linenoiseHistoryAdd( line );
@@ -86,6 +113,12 @@ int main( int argc, char *argv[] ){
      try{
           buff = Debug::loadFile( argv[1], &size );
           debug.loadProgram(buff,size);
+          std::string src( debug.getSrcPath() );
+          std::ifstream inFile( src, std::ios::in );
+          std::string s;
+          while ( getline( inFile, s ) ){
+               srcCode.push_back( s );
+          }
      } catch ( OpenException &e ){
           std::cerr << "Error when opening the file" << std::endl;
           e.display();
