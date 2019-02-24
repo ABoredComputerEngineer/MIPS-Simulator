@@ -83,5 +83,14 @@ $(BIN)/linenoise.o: $(DBSRC)/linenoise.c $(DBINCLUDE)/linenoise.h
 	gcc -c $(DBSRC)/linenoise.c -I $(INCLUDE) -I $(DBINCLUDE) -o $(BIN)/linenoise.o
 
 
+# =======================================================================
+# | RULES FOR MAKING THE UI|
+# =======================================================================
+#
+APPSRC = $(SRC)/UI/
+GTK = `pkg-config gtkmm-3.0 --cflags --libs`
+
+app: $(APPSRC)/final.cpp
+	$(CXX) $(CXXFLAGS) $(APPSRC)/final.cpp -o $(BIN)/app $(GTK)
 clean:
 	rm -rf $(BIN)/*
