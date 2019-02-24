@@ -45,7 +45,8 @@ struct FileInfo {
           EXT_ASM,
      };
      std::string filePath;
-     Extension ext;
+//     Extension ext;
+     int ext; // 0 for asm , 1 for bin
      FileInfo ();
      FileInfo ( const std::string &s );
      void addFile( const std::string & );

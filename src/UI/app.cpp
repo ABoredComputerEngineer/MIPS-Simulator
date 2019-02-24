@@ -8,25 +8,43 @@ struct RowInfo {
      string str;
 };
 
+#define ASM_FILE 0
+#define BIN_FILE 1
+
 static std::string getExtension( const std::string &s ){
      std::string extension;
      for ( auto iter = s.end(); *iter != '.'; iter-- ){
           extension += *iter; 
      }
+     extension += ".";
      return string ( extension.rbegin(), extension.rend() );
 }
 
 FileInfo :: FileInfo ( const std::string &s ):filePath(s){
+     std::string extension = getExtension( s );
+     std::cout << extension << std::endl;
+     if ( extension == ".asm" ){
+          ext = ASM_FILE;
+     } else if ( extension == ".bin" ){
+          ext = BIN_FILE;
+     }
+     std::cout << "Ext " << std::endl;
+     std::cout << ext << std::endl;;
 }
 
-FileInfo :: FileInfo (){}
+FileInfo :: FileInfo () :ext(0){}
 
 void FileInfo :: addFile( const std::string &s ){
      filePath = s;
      std::string extension = getExtension( s );
-     if ( extensionMap.count( extension ) ){ // the extension exists in our supported list
-          ext = extensionMap[ extension ];          
+     std::cout << extension << std::endl;
+     if ( extension == ".asm" ){
+          ext = ASM_FILE;
+     } else if ( extension == ".bin" ){
+          ext = BIN_FILE;
      }
+     std::cout << "Ext " << std::endl;
+     std::cout << ext << std::endl;;
 }
 
 
@@ -37,11 +55,17 @@ void FileInfo :: addFile( const std::string &s ){
  */
 
 
-void MainWindow :: loadBin(std::ifstream &inFile){
+void MainWindow :: loadBin(std::ifstream &inFile, size_t fsize){
 }
 
-void MainWindow :: loadAsm(std::ifstream &inFile){
-     srcBuff = new char[ srcSize + 1 ];
+void MainWindow :: loadAsm(std::ifstream &inFile, size_t fsize){
+     if ( fsize > srcSize ){
+          if ( srcBuff ){
+               delete []srcBuff;
+          }
+          srcSize = fsize;
+          srcBuff = new char[ srcSize + 1 ];
+     } 
      char *str = srcBuff;
      std::string s;
      std::cout << "Print vector " << std::endl;
@@ -60,10 +84,9 @@ void MainWindow :: loadFile (){
      inFile.seekg( 0, std::ios::end );
      size_t fsize = inFile.tellg();
      inFile.seekg( 0, std::ios::beg ); 
-//     if ( currentFile.ext == FileInfo :: Extension :: EXT_ASM ){
-          srcSize = fsize;
-          loadAsm(inFile);
- //    }
+     if ( currentFile.ext == ASM_FILE){
+          loadAsm(inFile, fsize);
+     }
      inFile.close();
 }
 
@@ -106,8 +129,11 @@ void MainWindow :: onButton3( ){
 }
 
 MainWindow :: MainWindow ():\
+          srcBuff( nullptr ),\
+          srcSize(0),\
+          binBuff( nullptr ),\
+          binSize(0),\
           box(Gtk::ORIENTATION_VERTICAL),\
-          srcCode {"This","is an ", "Example","1","2","3","4","5","76","sadf","asdf" },\
           values { "Fuck","This","Shit" },\
           menu( this, &MainWindow :: onBtnOpen, &MainWindow::onButton2, &MainWindow::onButton3 ),\
           mainPane( srcCode, values ),\
@@ -143,5 +169,16 @@ void MainWindow :: memoryData( const char *start, size_t size ){
      logs.addToMemBuff(start,size);
 }
 
+MainWindow :: ~MainWindow (){
+     if ( srcBuff ){
+          delete []srcBuff;
+     }
+     if ( binBuff ){
+          delete []binBuff;
+     }
+}
+
+#undef ASM_FILE
+#undef BIN_FILE
 
 

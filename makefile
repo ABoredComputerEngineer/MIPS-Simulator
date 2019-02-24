@@ -87,8 +87,8 @@ $(BIN)/linenoise.o: $(DBSRC)/linenoise.c $(DBINCLUDE)/linenoise.h
 # | RULES FOR MAKING THE UI|
 # =======================================================================
 #
-APPSRC = $(SRC)/UI/*.cpp
 APPSRCPATH = $(SRC)/UI/
+APPSRC = $(APPSRCPATH)/*.cpp
 GTKOBJS = `pkg-config gtkmm-3.0 --cflags --libs`
 GTKHEADERS = `pkg-config gtkmm-3.0 --cflags`
 APPHEADERS = $(INCLUDE)/UI/*.hpp
@@ -96,15 +96,15 @@ APPOBJS = $(BIN)/buttonBox.o $(BIN)/mainPane.o $(BIN)/logDisplay.o $(BIN)/app.o 
 app: $(APPSRC) $(APPHEADERS) $(APPOBJS)
 	$(CXX) $(APPOBJS) $(GTKOBJS) $(DEBUG) -o $(BIN)/app
 
-$(BIN)/buttonBox.o:
+$(BIN)/buttonBox.o: $(APPSRCPATH)/buttonBox.cpp $(APPHEADERS)
 	$(CXX) -c $(APPSRCPATH)/buttonBox.cpp -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/buttonBox.o
-$(BIN)/mainPane.o:
+$(BIN)/mainPane.o:$(APPSRCPATH)/mainPane.cpp $(APPHEADERS)
 	$(CXX) -c $(APPSRCPATH)/mainPane.cpp  -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/mainPane.o
-$(BIN)/logDisplay.o:
+$(BIN)/logDisplay.o:$(APPSRCPATH)/logDisplay.cpp $(APPHEADERS)
 	$(CXX) -c $(APPSRCPATH)/logDisplay.cpp  -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/logDisplay.o
-$(BIN)/app.o:
+$(BIN)/app.o:$(APPSRCPATH)/app.cpp $(APPHEADERS)
 	$(CXX) -c $(APPSRCPATH)/app.cpp  -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/app.o
-$(BIN)/appmain.o:
+$(BIN)/appmain.o:$(APPSRCPATH)/main.cpp $(APPHEADERS)
 	$(CXX) -c $(APPSRCPATH)/main.cpp  -I $(INCLUDE)  $(GTKHEADERS) -o $(BIN)/appmain.o
 clean:
 	rm -rf $(BIN)/*

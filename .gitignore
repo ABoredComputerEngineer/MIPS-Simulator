@@ -76,7 +76,7 @@ dump/
 *callgrind*
 # GDB files
 *gdb*
-
+*.swp
 #Test Directory
 test/
 cpTest

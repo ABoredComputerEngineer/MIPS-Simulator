@@ -12,8 +12,8 @@ class MainWindow : public Gtk::Window {
           Gtk::Button openBtn,button2,button3;
           char *srcBuff; // holds the source code
           size_t srcSize;
-          size_t binSize;
           char *binBuff; // holds the binary generated
+          size_t binSize;
           std::vector < std::string > srcCode;
           std::vector < std::string > values;
           ButtonBox menu;
@@ -21,10 +21,11 @@ class MainWindow : public Gtk::Window {
           LogDisplay logs;
      public:
           MainWindow ();
+          virtual ~MainWindow();
           void addErrorData( const std::vector < ErrorInfo >&s );
           void memoryData( const char *start, size_t size );
-          void loadAsm( std::ifstream & );
-          void loadBin( std::ifstream & );
+          void loadAsm( std::ifstream &, size_t fsize );
+          void loadBin( std::ifstream &, size_t fsize );
           void onBtnOpen();
           void onButton2();
           void onButton3();
