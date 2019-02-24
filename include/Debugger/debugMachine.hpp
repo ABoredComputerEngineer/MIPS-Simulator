@@ -38,7 +38,7 @@ class DebugMachine : public Machine {
      inline void setPC(Word w) { pc = w ; }
      inline Word getEPC(){ return epc; }  
      inline Word getSR() { return sr; }
-     inline size_t getInsNum(){ return currentInsNumber; }
+//     inline size_t getInsNum(){ return currentInsNumber; }
      inline void setExceptionFlag( bool val ){ exceptionRaised = val; }
      inline void clearSR() { sr = 0 ;};
      inline bool isExceptionRaised(){ return exceptionRaised; }

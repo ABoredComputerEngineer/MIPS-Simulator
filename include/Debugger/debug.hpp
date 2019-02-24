@@ -58,6 +58,19 @@ class BreakPoint {
           void display();
 };
 
+struct ProgramException {
+     size_t pc;
+     size_t line;
+     size_t insCode;
+     const std::string *type;
+     const std::string *exceptInfo;
+     
+     ProgramException ();
+     ProgramException( size_t , size_t , size_t, const std::string *, const std::string *);
+     void set( size_t , size_t , size_t, const std::string*, const std::string *);
+};
+
+
 
 class Debugger {
      friend class BreakPoint;
@@ -71,13 +84,15 @@ class Debugger {
      MainHeader mheader;
      ProgramHeader pheader;
      DebugSection dbgSection;
+     ProgramException exceptionInfo;
      std::unordered_map< size_t , size_t > lineToInsMap; // maps line number to instruction code
      std::unordered_map< size_t , size_t > lineToInsNumberMap; // maps line number to instruction  number
      std::unordered_map< size_t , size_t > insNumberToLineMap; // maps line number to instruction  number
-     std::vector < std::string > srcCode;
+     //std::vector < std::string > srcCode;
      AppendBuffer pBuffer; // the print Buffer for displaying stuff like messages
      std::vector < BreakPoint > breakPointList; // stores a list representation of break points
      std::unordered_map< size_t, BreakPoint > breakPointMap; // Maps line number --> Breakpoint
+     bool hasException;
      public:
      Debugger ();
      void loadProgram(const char *buff, size_t size);
@@ -88,14 +103,16 @@ class Debugger {
      void run();
      void singleStep();
      void printHaltedMessage();
-     void displaySource( size_t start, size_t end );
-     void displayCurrentSource();
      inline bool isHalted() { return machine.isHalted(); }
      void setBreakPoint(size_t line );
      void continueExecution();
      RegisterInfo getRegisters();
      void display(const char *buff);
      char* getMem(AppendBuffer &buff,size_t address, size_t bytes);
+     inline std::string getSrcPath() { return dbgSection.srcPath; }
+     inline bool isExceptionRaised() { return hasException; }
+     inline size_t getLineNumber( ) { return currentLine; }
+     ProgramException &getExceptionInfo( );
 };
 
 #endif
