@@ -17,6 +17,7 @@ class RegisterView : public ScrolledWindowWithColumns<Glib::ustring,Glib::ustrin
      public:
           RegisterView ();
           RegisterView ( std::vector < std::string > &values );
+          void updateRegisters( RegisterInfo * ); // RegisterInfo is defined in debugMachine.hpp
 };
 
 class MainPane : public Gtk::Paned{
@@ -24,9 +25,12 @@ class MainPane : public Gtk::Paned{
           SourceView source;
           RegisterView registers;
      public:
+          MainPane ();
           MainPane ( std::vector < std::string >&code, std::vector < std::string > &values );
           long long getSelectedLineNumber();
           void updateSrc( std::vector < std::string > &code );
           void updateRow (int );
+          void update( size_t line, RegisterInfo *inf );
 };
+
 #endif

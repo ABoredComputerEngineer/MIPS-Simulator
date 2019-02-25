@@ -104,6 +104,8 @@ void MainWindow :: loadAsm(std::ifstream &inFile, size_t fsize){
      std::cout<< "Print Buffer" << std::endl;
      std::cout << srcBuff<< std::endl;
 }
+
+
 void MainWindow :: loadFile (){
      std::cout << currentFile.filePath << std::endl;
      std::ifstream inFile( currentFile.filePath, std::ios::binary );
@@ -113,8 +115,10 @@ void MainWindow :: loadFile (){
      std::string s = getExtension( currentFile.filePath );
      
      if ( strcmp(s.c_str(),".asm" ) == 0 ){
+          executable = false;
           loadAsm(inFile, fsize);
      } else if ( strcmp( s.c_str(),".bin" ) == 0 ){
+          executable = true;
           std::cout << "Loading bin file" << std::endl;
           loadBin( inFile, fsize );
      }
@@ -150,13 +154,28 @@ void MainWindow :: onBtnOpen( ){
           std::cerr << "What the fuck happened?" << std::endl;
      }
 }
-void MainWindow :: onButton2( ){
-     long long rowInfo = mainPane.getSelectedLineNumber();
-     std::cout << rowInfo << std::endl;
+
+void MainWindow :: onBtnStep (){
+     std::cout << executable << std::endl;
+     if ( executable ){
+          debug.singleStep();
+          size_t line = debug.getLineNumber();
+          auto registers = debug.getRegisters();
+          mainPane.update( line, &registers );
+     }
 }
-void MainWindow :: onButton3( ){
-     long long rowInfo = mainPane.getSelectedLineNumber();
-     std::cout << rowInfo << std::endl;
+
+void MainWindow :: onBtnBreak(){
+     std::cout << "Breaking" << std::endl;
+     long long line = mainPane.getSelectedLineNumber();
+     debug.setBreakPoint( line );
+}
+
+void MainWindow :: onBtnContinue(){
+     debug.continueExecution();
+     size_t line = debug.getLineNumber();
+     auto registers = debug.getRegisters();
+     mainPane.update( line, &registers );
 }
 
 MainWindow :: MainWindow ():\
@@ -164,10 +183,9 @@ MainWindow :: MainWindow ():\
           srcSize(0),\
           binBuff( nullptr ),\
           binSize(0),\
+          executable( false ),\
           box(Gtk::ORIENTATION_VERTICAL),\
-          values { "Fuck","This","Shit" },\
-          menu( this, &MainWindow :: onBtnOpen, &MainWindow::onButton2, &MainWindow::onButton3 ),\
-          mainPane( srcCode, values ),\
+          menu( this, &MainWindow :: onBtnOpen, &MainWindow::onBtnStep, &MainWindow::onBtnBreak),\
           logs( &mainPane )\
 {
      // Set window sizes and such

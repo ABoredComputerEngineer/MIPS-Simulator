@@ -488,7 +488,8 @@ try {
         if ( current.opcode == 0 ){
             switch ( current.func ){
                 case 8:
-                    return parseJr();
+                    p = parseJr();
+                    err = false;
                     break;
                 default:
                     break;

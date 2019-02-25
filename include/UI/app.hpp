@@ -16,6 +16,7 @@ class MainWindow : public Gtk::Window {
           char *binBuff; // holds the binary generated
           size_t binSize;
           Debugger debug;
+          bool executable; // is true if we load the bin file or run the assembler in the asm file
           std::vector < std::string > srcCode;
           std::vector < std::string > values;
           ButtonBox menu;
@@ -29,8 +30,9 @@ class MainWindow : public Gtk::Window {
           void loadAsm( std::ifstream &, size_t fsize );
           void loadBin( std::ifstream &, size_t fsize );
           void onBtnOpen();
-          void onButton2();
-          void onButton3();
+          void onBtnStep();
+          void onBtnBreak();
+          void onBtnContinue();
           void loadFile(); // loads the file denoted by the currentFile
 
 };

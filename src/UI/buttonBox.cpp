@@ -6,8 +6,8 @@ ButtonBox :: ButtonBox(MainWindow *m, voidFunc a, voidFunc b, voidFunc c):\
           f2(b),\
           f3(c),\
           openBtn("Open File"),\
-          btn2("Button 2"),\
-          btn3("Button 3")\
+          btn2("Step"),\
+          btn3("Break")\
 {
 #define BUTTON_DIM 75 
 #define BUTTON_SPACING 20
@@ -24,6 +24,6 @@ ButtonBox :: ButtonBox(MainWindow *m, voidFunc a, voidFunc b, voidFunc c):\
 
 void ButtonBox :: connectButtons(){
      openBtn.signal_clicked().connect( sigc::mem_fun( *parent,f1 ) ); 
-     btn2.signal_clicked().connect( sigc::mem_fun( *parent,f1 ) ); 
-     btn3.signal_clicked().connect( sigc::mem_fun( *parent,f1 ) ); 
+     btn2.signal_clicked().connect( sigc::mem_fun( *parent,f2) ); 
+     btn3.signal_clicked().connect( sigc::mem_fun( *parent,f3 ) ); 
 }
