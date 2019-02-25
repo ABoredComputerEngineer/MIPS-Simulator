@@ -63,12 +63,12 @@ $(BIN)/functions.o: $(VMSRC)/functions.cpp $(VMSRC)/printBuffer.cpp $(VMHEADERS)
 #
 
 DBINCLUDE = $(INCLUDE)/Debugger
-DBOBJS = $(BIN)/dbg.o $(BIN)/linenoise.o $(BIN)/debugMachine.o $(BIN)/dbmain.o
+DBOBJS = $(BIN)/dbg.o $(BIN)/linenoise.o $(BIN)/debugMachine.o 
 DBSRC = $(SRC)/Debugger
 DBHEADERS = $(DBINCLUDE)/*.hpp $(VMHEADERS) $(DBINCLUDE)/linenoise.h
 
-debugger: $(DBOBJS) $(VMOBJS)
-	$(CXX) $(DBOBJS) $(VMOBJS) $(DEBUG) -o $(BIN)/debug
+debugger:$(BIN)/dbmain.o $(DBOBJS) $(VMOBJS)
+	$(CXX) $(BIN)/dbmain.o $(DBOBJS) $(VMOBJS) $(DEBUG) -o $(BIN)/debug
 
 $(BIN)/dbg.o : $(DBSRC)/debug.cpp $(DBHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(DBSRC)/debug.cpp $(DEBUG) -I $(INCLUDE) -I $(DBINCLUDE) -o $(BIN)/dbg.o
@@ -87,24 +87,24 @@ $(BIN)/linenoise.o: $(DBSRC)/linenoise.c $(DBINCLUDE)/linenoise.h
 # | RULES FOR MAKING THE UI|
 # =======================================================================
 #
-APPSRCPATH = $(SRC)/UI/
+APPSRCPATH = $(SRC)/UI
 APPSRC = $(APPSRCPATH)/*.cpp
 GTKOBJS = `pkg-config gtkmm-3.0 --cflags --libs`
 GTKHEADERS = `pkg-config gtkmm-3.0 --cflags`
 APPHEADERS = $(INCLUDE)/UI/*.hpp
 APPOBJS = $(BIN)/buttonBox.o $(BIN)/mainPane.o $(BIN)/logDisplay.o $(BIN)/app.o $(BIN)/appmain.o
-app: $(APPSRC) $(APPHEADERS) $(APPOBJS)
-	$(CXX) $(APPOBJS) $(GTKOBJS) $(DEBUG) -o $(BIN)/app
+app: $(APPSRC) $(APPHEADERS) $(APPOBJS) $(DBOBJS)
+	$(CXX) $(APPOBJS) $(GTKOBJS) $(DBOBJS) $(VMOBJS) $(DEBUG) -o $(BIN)/app
 
 $(BIN)/buttonBox.o: $(APPSRCPATH)/buttonBox.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/buttonBox.cpp -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/buttonBox.o
+	$(CXX) -c $(APPSRCPATH)/buttonBox.cpp -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/buttonBox.o
 $(BIN)/mainPane.o:$(APPSRCPATH)/mainPane.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/mainPane.cpp  -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/mainPane.o
+	$(CXX) -c $(APPSRCPATH)/mainPane.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/mainPane.o
 $(BIN)/logDisplay.o:$(APPSRCPATH)/logDisplay.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/logDisplay.cpp  -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/logDisplay.o
+	$(CXX) -c $(APPSRCPATH)/logDisplay.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/logDisplay.o
 $(BIN)/app.o:$(APPSRCPATH)/app.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/app.cpp  -I $(INCLUDE) $(GTKHEADERS) -o $(BIN)/app.o
+	$(CXX) -c $(APPSRCPATH)/app.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/app.o
 $(BIN)/appmain.o:$(APPSRCPATH)/main.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/main.cpp  -I $(INCLUDE)  $(GTKHEADERS) -o $(BIN)/appmain.o
+	$(CXX) -c $(APPSRCPATH)/main.cpp  -I $(INCLUDE) -I $(DBINCLUDE)  $(GTKHEADERS) -o $(BIN)/appmain.o
 clean:
 	rm -rf $(BIN)/*

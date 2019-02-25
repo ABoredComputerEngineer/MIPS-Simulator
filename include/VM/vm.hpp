@@ -207,7 +207,10 @@ class Machine {
 #define RD(x) ( getBits(x,15,11) )
 #define IMM(x) ( signExtend16( getBits(x,15,0) & 0xffff ) ) // get last sixteen bits and reduce to 16-bits
 #define SHAMT(w) ( getBits(w,10,6) )
+
+#ifndef ABS
 #define ABS(x) ( ( ( x ) < 0 )?( -( x ) ):0 )
+#endif
 #define FUNC(w) ( getBits(w,5,0) )
 inline size_t getBits( size_t x, size_t end, size_t start){
     return ( x >> (start) ) & ~( ~0 << ( end-start + 1 ) );

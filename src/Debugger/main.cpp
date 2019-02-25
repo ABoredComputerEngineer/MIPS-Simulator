@@ -1,5 +1,9 @@
 // Contains code for the command line interface of the debugger
 // Run it as ./debug <program_name>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <linenoise.h>
 #include <debug.hpp>
 AppendBuffer printBuffer;
 std::vector < std::string > srcCode;

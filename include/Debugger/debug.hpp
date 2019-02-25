@@ -1,12 +1,12 @@
 #ifndef DEBUG_HPP
 
 #define DEBUG_HPP
-#include <iostream>
+//#include <iostream>
 #include <string>
-#include <sstream>
+#include <sstream> 
 #include <cstring>
+//#include <cstdio>
 #include <cstdio>
-#include <linenoise.h>
 #include <unordered_map>
 #include <VM/printBuffer.hpp>
 #include <debugMachine.hpp>
@@ -95,7 +95,7 @@ class Debugger {
      bool hasException;
      public:
      Debugger ();
-     void loadProgram(const char *buff, size_t size);
+     void loadProgram(const char *buff, size_t size); // take the program stored in buff and initialize the machine with it
      void parseDebugInfo( const char *buff );
      void generateMaps( const char *buff ); 
      void displayCode( size_t line );

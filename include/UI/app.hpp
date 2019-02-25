@@ -1,6 +1,7 @@
 #ifndef APP_MAIN_UI_HPP
 
 #define APP_MAIN_UI_HPP
+#include <Debugger/debug.hpp>
 #include <UI/common.hpp>
 #include <UI/buttonBox.hpp>
 #include <UI/mainPane.hpp>
@@ -14,6 +15,7 @@ class MainWindow : public Gtk::Window {
           size_t srcSize;
           char *binBuff; // holds the binary generated
           size_t binSize;
+          Debugger debug;
           std::vector < std::string > srcCode;
           std::vector < std::string > values;
           ButtonBox menu;

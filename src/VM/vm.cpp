@@ -681,7 +681,9 @@ void Machine::test(){
 
 void Machine::loadProgram(const char *text, size_t size ){
     // reads size byte from text, checking for errors
-    if ( size >= memory.textSize ){
+    // size is in bytes while textSize is in number of words
+    // we convert size to number of words
+    if ( (size >> 2 ) >= (memory.textSize ) ){
         throw MachineException("Program is too long for the allocated text Area.",LARGEPROG);
     }
     memcpy( memory.vals + memory.textStart, text, size );

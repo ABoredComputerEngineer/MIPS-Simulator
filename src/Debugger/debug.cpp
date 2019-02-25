@@ -6,7 +6,7 @@ void FileException :: display() {
 }
 
 
-char* Debug::loadFile(const char *path, size_t *buffSize){
+char* Debug::loadFile(const char *path, size_t *buffSize){ // the namespace function
      // loads a program into a buffer and returns a pointer to that buffer
      assert( path );
      std::ifstream inFile(path,std::ifstream::binary|std::ifstream::in);
@@ -46,7 +46,7 @@ void BreakPoint::disable(){
 }
 
 
-Debugger :: Debugger() : machine( 1024 ), currentLine( ){
+Debugger :: Debugger() : machine( 4096 ), currentLine( ){
      //srcCode.reserve( 1000 );
      breakPointList.reserve( 100 );
 }

@@ -26,6 +26,7 @@ FileInfo :: FileInfo ( const std::string &s ):filePath(s){
      if ( extension == ".asm" ){
           ext = ASM_FILE;
      } else if ( extension == ".bin" ){
+          assert( 0 );
           ext = BIN_FILE;
      }
      std::cout << "Ext " << std::endl;
@@ -54,8 +55,33 @@ void FileInfo :: addFile( const std::string &s ){
  * ========================================
  */
 
+static size_t fileSize( std::ifstream &inFile){
+     inFile.seekg( 0, std::ios::end );
+     size_t x = inFile.tellg();
+     inFile.seekg( 0, std::ios::beg );
+     return x;
+}
 
 void MainWindow :: loadBin(std::ifstream &inFile, size_t fsize){
+     if ( fsize > binSize ){
+          if ( binBuff ){ delete []binBuff ; }
+          binSize = fsize;
+          binBuff = new char[ binSize + 1 ];
+     }
+     inFile.read( binBuff, binSize );
+     std::cout << "Loading program in the machine " << std::endl;
+     try{
+          debug.loadProgram( binBuff, binSize );
+     } catch ( MachineException &m ){
+          m.display();
+          return ;
+     }
+     // load the asm source file
+     auto src = debug.getSrcPath();
+     std::cout << src << std::endl;
+     std::ifstream asmFile( src, std::ios::binary | std::ios::in );
+     size_t size = fileSize( asmFile );
+     loadAsm( asmFile, size );
 }
 
 void MainWindow :: loadAsm(std::ifstream &inFile, size_t fsize){
@@ -84,8 +110,13 @@ void MainWindow :: loadFile (){
      inFile.seekg( 0, std::ios::end );
      size_t fsize = inFile.tellg();
      inFile.seekg( 0, std::ios::beg ); 
-     if ( currentFile.ext == ASM_FILE){
+     std::string s = getExtension( currentFile.filePath );
+     
+     if ( strcmp(s.c_str(),".asm" ) == 0 ){
           loadAsm(inFile, fsize);
+     } else if ( strcmp( s.c_str(),".bin" ) == 0 ){
+          std::cout << "Loading bin file" << std::endl;
+          loadBin( inFile, fsize );
      }
      inFile.close();
 }

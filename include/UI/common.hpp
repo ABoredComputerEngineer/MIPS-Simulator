@@ -1,6 +1,7 @@
 #ifndef APP_COMMON_HPP
 
 #define APP_COMMON_HPP
+#include <Debugger/debug.hpp>
 #include <iostream>
 #include <fstream>
 #include <gtkmm.h>
@@ -46,7 +47,7 @@ struct FileInfo {
      };
      std::string filePath;
 //     Extension ext;
-     int ext; // 0 for asm , 1 for bin
+     int ext;
      FileInfo ();
      FileInfo ( const std::string &s );
      void addFile( const std::string & );
