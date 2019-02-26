@@ -1,6 +1,7 @@
-#include "parse.hpp"
+#include <parse.hpp>
 strToIndexMap labelMap; 
 using std::string;
+using namespace Assembler;
 #define UNIT 0
 
 InstructionException :: InstructionException ( InstructionException :: Type  t) : type(t){}
@@ -273,7 +274,7 @@ int Parser::parseInt(){
 }
 
 void Parser::genRegisterError( RegisterException &e ){
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     if ( e.type == RegisterException :: EXPECTED){
         errorBuffer.append("Expected a register but instead got \'%s\'.", buff);
     }else  if ( e.type == RegisterException :: INVALID ){
@@ -287,7 +288,7 @@ void Parser::genRegisterError( RegisterException &e ){
 }
 
 void Parser :: genLexerMatchError( LexerMatchException &l ){
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     const std::string &expected = lex.tokenMap[l.expected];  
     const std::string &present = lex.tokenMap[l.present];
     errorBuffer.append( "Expected token \'%s\' but insted got \'%s\'.", expected.c_str(),present.c_str());  
@@ -300,7 +301,7 @@ void Parser :: genLexerMatchError( LexerMatchException &l ){
 }
 
 void Parser::genInstructionEndException(){
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     errorBuffer.append("Invalid number of arguments to the instruction");
     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
         currentLine,\
@@ -310,7 +311,7 @@ void Parser::genInstructionEndException(){
 }
 
 void Parser::genExpressionError( ExpressionException &expr ){
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     if ( expr.type == ExpressionException::Type::INVALID_OP ){
         errorBuffer.append("Invalid operator %s in expression.",buff);
     } else if ( expr.type == ExpressionException::Type::INVALID_TOKEN ){
@@ -323,7 +324,7 @@ void Parser::genExpressionError( ExpressionException &expr ){
     ));
 }
 void Parser::genlabelError(){
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     errorBuffer.append("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
         currentLine,\
@@ -574,7 +575,7 @@ ParseObj Parser::parse( ){
         if ( !lex.match(Lexer::TOKEN_COLON,buff) ){
              parseSuccess = false;
             err= true;
-            errorBuffer.clear();
+            errorBuffer.clearBuff();
             errorBuffer.append("Unidentified instruction \'%s\'.",str.c_str() );
             errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
                 currentLine,\
@@ -592,7 +593,7 @@ ParseObj Parser::parse( ){
         return ParseObj();
     }
     parseSuccess = false;
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     errorBuffer.append("Expected instruction or label name but got \'%s\' instead.",buff);
     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
         currentLine,\

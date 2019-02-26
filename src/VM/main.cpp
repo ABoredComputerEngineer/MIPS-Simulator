@@ -1,7 +1,5 @@
 #include "vm.hpp"
 
-extern char *formatErr(const char *fmt, ... );
-extern char* errBuff;
 extern void init();
 const char *splitPath(const char *fullPath ){
   // fullPath = ~/random/random/zz.c
@@ -22,7 +20,7 @@ char *loadFile(const char *path, size_t *buffSize){
     std::ifstream inFile(path,std::ifstream::binary|std::ifstream::in);
     if( !inFile.is_open() || !inFile.good() ){
         const char *s = strerror( errno );
-        throw MachineException(formatErr("%s : %s",path,s), LDERR|OPNERR );
+        std::cout << s << std::endl;
         return nullptr;
     }
     inFile.seekg(0,std::ios_base::end);
@@ -102,7 +100,6 @@ int main(int argc, char *argv[] ){
             dump += fileName;
         }
     }
-    errBuff = new char[ERR_BUFF_SIZE];
     init();
     Machine m(1024 * sizeof(Word) );
     char *buff = nullptr;
@@ -113,7 +110,6 @@ int main(int argc, char *argv[] ){
         m.display();
         std::cerr << "Terminating..." << std::endl;
         delete []buff;
-        delete []errBuff;
         return -1;
     }
     MainHeader mheader;
@@ -141,7 +137,6 @@ int main(int argc, char *argv[] ){
         m.display();
         std::cerr << "Terminating..." << std::endl;
         delete []buff;
-        delete []errBuff;
         return -1;
     }
     m.execute();
@@ -149,5 +144,4 @@ int main(int argc, char *argv[] ){
         m.dumpMem(dump.c_str());
     }
     delete []buff;
-    delete []errBuff;
 }

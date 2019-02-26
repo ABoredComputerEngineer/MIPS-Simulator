@@ -3,9 +3,9 @@
  * definitions common to all the parts of the assembler
  */
 
-#ifndef COMMON_HPP
+#ifndef ASM_COMMON_HPP
 
-#define COMMON_HPP
+#define ASM_COMMON_HPP
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <VM/printBuffer.hpp>
 typedef long int Integer;
 
 struct Instruction {
@@ -72,6 +73,7 @@ typedef std::unordered_map< std::string ,Integer > strToIntMap;
 typedef std::unordered_map< char , int > charToIntMap;
 typedef std::unordered_map<std::string,size_t> strToIndexMap;
 
+namespace Assembler {
 struct FileException {
     private:
     std::string str;
@@ -83,7 +85,10 @@ struct FileException {
     }  
 };
 
+}
+
 void initialize_assembler();
+#if 0
 struct AppendBuffer {
     enum { DEFAULT_SIZE = 1024 };
     char *buff;
@@ -103,6 +108,7 @@ struct AppendBuffer {
     inline void clear(){ len = 0 ;}
     inline char *getBuff() { return buff; }
 };
+#endif
 
 struct ErrorInfo {
 	enum ErrorLocation {

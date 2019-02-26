@@ -20,6 +20,9 @@ using std::string;
 #include <unistd.h>
 
 #endif
+
+using namespace Assembler;
+using namespace Gen;
 char *errBuff;
 char *formatErr( const char *fmt, ... ){
     if ( !errBuff ){

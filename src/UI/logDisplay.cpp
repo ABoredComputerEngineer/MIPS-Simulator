@@ -22,12 +22,12 @@ ErrorDisplay :: ErrorDisplay( vector < ErrorInfo > &s ):pane(nullptr){
 
      for ( size_t i = 0; i < s.size(); i++ ){
           auto row = *( refList->append() );
-          row[ entry.col0 ] = s[i].line;
-          row[ entry.col1 ] = s[i].errText;
+          row[ entry.col0 ] = s[i].lineNumber;
+          row[ entry.col1 ] = s[i].errInfo;
      }
 
      treeView.append_column( "Line", entry.col0 );
-     treeView.append_column( "Program Text", entry.col1 );
+     treeView.append_column( "Error Info", entry.col1 );
      show_all_children();
 }
 
@@ -37,8 +37,8 @@ void ErrorDisplay :: updateBuffer ( const vector <ErrorInfo > &s ){
      refList->clear(); 
      for ( size_t i = 0; i < s.size(); i++ ){
           auto row = * (refList->append() );
-          row[ entry.col0 ] = s[i].line;
-          row[ entry.col1 ] = s[i].errText;
+          row[ entry.col0 ] = s[i].lineNumber;
+          row[ entry.col1 ] = s[i].errInfo;
      }
      show_all_children();
 }

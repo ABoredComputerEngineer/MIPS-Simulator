@@ -4,6 +4,7 @@ strToBoolMap keywordMap;
 strToInsMap insMap;
 strToIntMap regMap;
 charToIntMap digitMap;
+using namespace Assembler;
 
 #define NEW_INS(NAME,OP,FUNC,KIND,CLASS) ( Instruction ( string (#NAME), OP, FUNC, Instruction::KIND, Instruction::CLASS) ) 
 #define ADD_INS(NAME,OP,FUNC,KIND,CLASS) insMap[#NAME] = NEW_INS(NAME,OP,FUNC,KIND,CLASS) 
@@ -153,6 +154,7 @@ void initialize_assembler( ){
 }
 
 
+#if 0
 void *xmalloc( size_t size ){
     void *x = malloc( sizeof(char) * size );
     if ( x ){
@@ -257,6 +259,7 @@ char *AppendBuffer::appendn( size_t size, const char *x ){
     len += size;
     return buff;
 }
+#endif
 
 ErrorInfo :: ErrorInfo (){}
 

@@ -2,7 +2,6 @@
 
 #define GEN_HPP
 #include "common.hpp"
-#include "common.hpp"
 #include "lex.hpp"// for the parser
 #include "parse.hpp"
 #include <vector>
@@ -30,7 +29,9 @@ enum Limits {
 };
 
 #define UINT32_CAST( x ) ( static_cast<uint32_t>( x ) )
+#ifndef ABS
 #define ABS(x) ( ( (x) > 0 ) ? (x) : ( -(x) ) )
+#endif
 #define IS_UNSIGNED_5(x) ( !( (x) & ~FIVE_BIT_MAX ) )
 #define IS_UNSIGNED_6( x ) ( !( (x) & ~SIX_BIT_MAX ) )
 #define IS_UNSIGNED_16( x ) ( !( (x) & ~SIXTEEN_BIT_MAX ) )
@@ -55,7 +56,7 @@ class GenError{
 };
 
 
-
+namespace Gen {
 struct MainHeader{
     char  isa[16]; // string containing the isa that generated the file
     size_t version; // the version of the assembler that generated the binary file
@@ -86,6 +87,7 @@ struct LineMapEntry {
     size_t ins;
     size_t insNum;
 };
+}
 class Generator {
     std::vector <Code> prog;
     std::vector <ParseObj > objs;
@@ -108,7 +110,7 @@ class Generator {
     bool resolveBranch(const ParseObj *);
     bool resolveJump(const ParseObj *);
     void genHeader(AppendBuffer &);
-    size_t genLineInfo(std::vector<LineMapEntry> &);
+    size_t genLineInfo(std::vector<Gen::LineMapEntry> &);
     void genDebugInfo(AppendBuffer &);
     void genMainHeader(std::ofstream &outFile);
     void genProgHeader(std::ofstream &outFile, size_t progSize);

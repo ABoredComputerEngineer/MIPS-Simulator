@@ -1,6 +1,7 @@
 #include "lex.hpp"
 extern std::vector < ErrorInfo > errorList; // defined in common.cpp
 using std::string;
+using namespace Assembler;
 
 LexerMatchException :: LexerMatchException ( Lexer::TokenKind e, Lexer::TokenKind p ):\
     expected(e), present(p){}

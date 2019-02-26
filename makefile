@@ -17,21 +17,21 @@ DEBUG=-g3 -gdwarf-2
 #
 
 ASMINCLUDE = $(INCLUDE)/assembler
-ASMDEPENDENCIES = $(BIN)/main.o $(BIN)/gen.o $(BIN)/parse.o $(BIN)/lex.o $(BIN)/common.o
+ASMDEPENDENCIES = $(BIN)/gen.o $(BIN)/parse.o $(BIN)/lex.o $(BIN)/common.o 
 ASMSRC = $(SRC)/assembler
-assembler: $(ASMDEPENDENCIES) 
-		$(CXX) $(ASMDEPENDENCIES) $(DEBUG) -o $(BIN)/assembler 
+assembler: $(BIN)/main.o $(ASMDEPENDENCIES) $(BIN)/printBuffer.o
+		$(CXX) $(BIN)/main.o $(ASMDEPENDENCIES) $(BIN)/printBuffer.o $(DEBUG) -o $(BIN)/assembler 
 
-$(BIN)/main.o: $(ASMSRC)/main.cpp $(ASMINCLUDE)/*.hpp
-		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/main.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/main.o
-$(BIN)/gen.o: $(ASMSRC)/gen.cpp $(ASMINCLUDE)/*.hpp
-		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/gen.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/gen.o
-$(BIN)/parse.o: $(ASMSRC)/parse.cpp $(ASMINCLUDE)/*.hpp 
-		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/parse.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/parse.o
-$(BIN)/lex.o: $(ASMSRC)/lex.cpp $(ASMINCLUDE)/*.hpp
-		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/lex.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/lex.o
-$(BIN)/common.o: $(ASMSRC)/common.cpp $(ASMINCLUDE)/*.hpp 
-		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/common.cpp $(DEBUG) -I $(ASMINCLUDE) -o $(BIN)/common.o
+$(BIN)/main.o: $(ASMSRC)/main.cpp $(ASMINCLUDE)/*.hpp  $(INCLUDE)/VM/printBuffer.hpp
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/main.cpp $(DEBUG) -I $(ASMINCLUDE) -I $(INCLUDE) -o $(BIN)/main.o
+$(BIN)/gen.o: $(ASMSRC)/gen.cpp $(ASMINCLUDE)/*.hpp $(INCLUDE)/VM/printBuffer.hpp
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/gen.cpp $(DEBUG) -I $(ASMINCLUDE)  -I $(INCLUDE) -o $(BIN)/gen.o
+$(BIN)/parse.o: $(ASMSRC)/parse.cpp $(ASMINCLUDE)/*.hpp $(INCLUDE)/VM/printBuffer.hpp 
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/parse.cpp $(DEBUG) -I $(ASMINCLUDE) -I $(INCLUDE) -o $(BIN)/parse.o
+$(BIN)/lex.o: $(ASMSRC)/lex.cpp $(ASMINCLUDE)/*.hpp $(INCLUDE)/VM/printBuffer.hpp
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/lex.cpp $(DEBUG) -I $(ASMINCLUDE)  -I $(INCLUDE) -o $(BIN)/lex.o
+$(BIN)/common.o: $(ASMSRC)/common.cpp $(ASMINCLUDE)/*.hpp $(INCLUDE)/VM/printBuffer.hpp
+		$(CXX) $(CXXFLAGS) -c $(ASMSRC)/common.cpp $(DEBUG) -I $(ASMINCLUDE) -I $(INCLUDE) -o $(BIN)/common.o
 
 # =======================================================================
 # | RULES FOR MAKING THE VM |
@@ -49,7 +49,7 @@ $(BIN)/vmain.o: $(VMSRC)/main.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/main.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vmain.o
 $(BIN)/vm.o: $(VMSRC)/vm.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/vm.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/vm.o
-$(BIN)/printBuffer.o: $(VMSRC)/printBuffer.cpp
+$(BIN)/printBuffer.o: $(VMSRC)/printBuffer.cpp $(VMINCLUDE)/printBuffer.hpp
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/printBuffer.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/printBuffer.o
 $(BIN)/functions.o: $(VMSRC)/functions.cpp $(VMSRC)/printBuffer.cpp $(VMHEADERS)
 	$(CXX) $(CXXFLAGS) -c $(VMSRC)/functions.cpp $(DEBUG) -I $(VMINCLUDE) -o $(BIN)/functions.o
@@ -93,18 +93,18 @@ GTKOBJS = `pkg-config gtkmm-3.0 --cflags --libs`
 GTKHEADERS = `pkg-config gtkmm-3.0 --cflags`
 APPHEADERS = $(INCLUDE)/UI/*.hpp
 APPOBJS = $(BIN)/buttonBox.o $(BIN)/mainPane.o $(BIN)/logDisplay.o $(BIN)/app.o $(BIN)/appmain.o
-app: $(APPSRC) $(APPHEADERS) $(APPOBJS) $(DBOBJS)
-	$(CXX) $(APPOBJS) $(GTKOBJS) $(DBOBJS) $(VMOBJS) $(DEBUG) -o $(BIN)/app
+app: $(APPSRC) $(APPHEADERS) $(APPOBJS) $(DBOBJS) $(ASMDEPENDENCIES)
+	$(CXX) $(APPOBJS) $(GTKOBJS) $(DBOBJS) $(VMOBJS) $(ASMDEPENDENCIES) $(DEBUG) -o $(BIN)/app
 
 $(BIN)/buttonBox.o: $(APPSRCPATH)/buttonBox.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/buttonBox.cpp -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/buttonBox.o
+	$(CXX) -c $(APPSRCPATH)/buttonBox.cpp -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) $(DEBUG) -o $(BIN)/buttonBox.o
 $(BIN)/mainPane.o:$(APPSRCPATH)/mainPane.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/mainPane.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/mainPane.o
+	$(CXX) -c $(APPSRCPATH)/mainPane.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) $(DEBUG) -o $(BIN)/mainPane.o
 $(BIN)/logDisplay.o:$(APPSRCPATH)/logDisplay.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/logDisplay.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/logDisplay.o
+	$(CXX) -c $(APPSRCPATH)/logDisplay.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) $(DEBUG) -o $(BIN)/logDisplay.o
 $(BIN)/app.o:$(APPSRCPATH)/app.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/app.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) -o $(BIN)/app.o
+	$(CXX) -c $(APPSRCPATH)/app.cpp  -I $(INCLUDE) -I $(DBINCLUDE) $(GTKHEADERS) $(DEBUG) -o $(BIN)/app.o
 $(BIN)/appmain.o:$(APPSRCPATH)/main.cpp $(APPHEADERS)
-	$(CXX) -c $(APPSRCPATH)/main.cpp  -I $(INCLUDE) -I $(DBINCLUDE)  $(GTKHEADERS) -o $(BIN)/appmain.o
+	$(CXX) -c $(APPSRCPATH)/main.cpp  -I $(INCLUDE) -I $(DBINCLUDE)  $(GTKHEADERS) $(DEBUG) -o $(BIN)/appmain.o
 clean:
 	rm -rf $(BIN)/*

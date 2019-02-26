@@ -13,9 +13,8 @@
 #include "printBuffer.hpp"
 
 
-char *errBuff;
 #define DEBUG 1
-
+#if 0
 char *formatErr( const char *fmt, ... ){
     if ( !errBuff ){
         std::cerr << "Error Buffer not initialized!" << std::endl;
@@ -31,6 +30,7 @@ char *formatErr( const char *fmt, ... ){
     va_end(args);
     return errBuff;
 }
+#endif
 struct FileException {
     private:
     std::string str;
@@ -311,8 +311,11 @@ void Machine::readDebugInfo(std::ifstream &inFile ){
     std::ifstream srcFile( debug.srcPath, std::ifstream::binary | std::ifstream::in );    
     if ( !inFile.good() || !inFile.is_open() ){
         const char *s = strerror( errno );
+        std::cout << s << std::endl;
+#if 0
         std::cerr << formatErr("%s:%s",debug.srcPath,s) << std::endl;
         std::cerr << "Execution will continue without any source information for display!" << std::endl;
+#endif
     }
     std::string line;
     srcCode.push_back(""); // store a garbage value at position 0 ( which corresponds to line number 0)

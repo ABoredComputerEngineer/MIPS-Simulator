@@ -2,12 +2,15 @@
 
 #define APP_MAIN_UI_HPP
 #include <sstream>
+#include <assembler/gen.hpp>
 #include <Debugger/debug.hpp>
 #include <UI/common.hpp>
 #include <UI/buttonBox.hpp>
 #include <UI/mainPane.hpp>
 #include <UI/logDisplay.hpp>
 
+extern std::vector < ErrorInfo > errorList; // defined in common.cpp of assembler
+extern strToIndexMap labelMap;  //defined in parse.cpp of assembler
 class InputDialog : public Gtk::Dialog {
      public:
           Gtk::Label label1, label2;
@@ -49,6 +52,7 @@ class MainWindow : public Gtk::Window {
           void onBtnBreak();
           void onBtnContinue();
           void onBtnMemory();
+          void onBtnAssemble();
           void loadFile(); // loads the file denoted by the currentFile
 
 };

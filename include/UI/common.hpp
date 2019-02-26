@@ -1,6 +1,7 @@
 #ifndef APP_COMMON_HPP
 
 #define APP_COMMON_HPP
+#include <assembler/gen.hpp>
 #include <Debugger/debug.hpp>
 #include <iostream>
 #include <fstream>
@@ -46,16 +47,16 @@ struct FileInfo {
           EXT_ASM,
      };
      std::string filePath;
+     std::string fileDirectory;
+     std::string fileName;
 //     Extension ext;
      int ext;
      FileInfo ();
      FileInfo ( const std::string &s );
      void addFile( const std::string & );
+     void genFileDirectory();
 };
-struct ErrorInfo{
-     long long line;
-     std::string errText;
-};
+
 namespace Gui {
      const std::string binExt(".bin");
      const std::string asmExt(".asm");

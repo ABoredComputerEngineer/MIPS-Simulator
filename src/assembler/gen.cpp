@@ -1,6 +1,9 @@
 #include "gen.hpp"
+#include <sstream>
 using std::vector;
 using std::string;
+using namespace Assembler;
+using namespace Gen;
 // FileException class will be moved to another file
 // TODO : Maybe not use std::vector?
 
@@ -18,7 +21,7 @@ GenError :: GenError ( GenError :: Type t,const size_t s,const std::string &insS
 }
 
 void Generator :: genError ( GenError &error ){
-    errorBuffer.clear();
+    errorBuffer.clearBuff();
     switch ( error.type ){
         case GenError::NO_LABEL:
             assert( error.label );
@@ -308,7 +311,9 @@ void Generator :: generateFile(const char *path){
     std::ofstream outFile( s, std::ofstream::out | std::ofstream::binary );
     if ( !outFile.is_open() || !outFile.good() ){
         const char *msg = strerror( errno );
-        throw FileException( formatErr("Error! Cannot generate output file \'%s\':%s",s.c_str(),msg) );
+        std::ostringstream stream;
+        stream <<"Error! Cannot generate output file" <<"\'"  <<s << "\'" << msg << std::endl;
+        throw FileException( stream.str().c_str() );
         return;
     }
     size_t bytes = prog.size() * sizeof(Code); // size of the file that will be generated
@@ -322,7 +327,9 @@ void Generator :: generateFile(const char *path){
     }
     if ( outFile.bad() ){
         const char *msg = strerror( errno );
-        throw FileException( formatErr("Error! Cannot write to file \'%s\'. %s",s,msg) );
+        std::ostringstream stream;
+        stream <<"Error! Cannot write to file" <<"\'"  <<s << "\'" << msg << std::endl;
+        throw FileException( stream.str().c_str() );
     }
     outFile.close();
 }
@@ -389,7 +396,9 @@ void Generator :: dumpToFile( const char *path ){
     std::ofstream outFile( s, std::ofstream::out | std::ofstream::binary );
     if ( !outFile.is_open() || !outFile.good() ){
         const char *msg = strerror( errno );
-        throw FileException( formatErr("Error! Cannot generate output file \'%s\':%s",s.c_str(),msg) );
+        std::ostringstream stream;
+        stream <<"Error! Cannot generate output file" <<"\'"  <<s << "\'" << msg << std::endl;
+        throw FileException( stream.str().c_str() );
         return;
     }
     size_t bytes = dumpBuff.len;
@@ -397,7 +406,9 @@ void Generator :: dumpToFile( const char *path ){
     outFile.write(reinterpret_cast<char *>( data ), bytes );
     if ( outFile.bad() ){
         const char *msg = strerror( errno );
-        throw FileException( formatErr("Error! Cannot write to file \'%s\'. %s",s,msg) );
+        std::ostringstream stream;
+        stream <<"Error! Cannot write to file" <<"\'"  <<s << "\'" << msg << std::endl;
+        throw FileException( stream.str().c_str() );
     }
     outFile.close();
 }
