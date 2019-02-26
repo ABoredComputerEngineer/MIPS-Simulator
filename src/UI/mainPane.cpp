@@ -56,7 +56,9 @@ MainPane :: MainPane (){
 
 void MainPane::update( size_t line , RegisterInfo *inf ){
      source.updateRow( line );
-     registers.updateRegisters( inf );
+     if ( inf ){
+          registers.updateRegisters( inf );
+     }
 }
 
 void SourceView :: updateRow ( int row ){

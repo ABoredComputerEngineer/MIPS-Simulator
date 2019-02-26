@@ -123,6 +123,14 @@ void MainWindow :: loadFile (){
           loadBin( inFile, fsize );
      }
      inFile.close();
+     mainPane.updateSrc( srcCode );
+     if ( executable ){
+     auto x = debug.getLineNumber();
+     std::cout << "Line Number " << x << std::endl;
+     mainPane.update( x, nullptr );
+     } else {
+          mainPane.update( 1, nullptr );
+     }
 }
 
 void MainWindow :: onBtnOpen( ){
@@ -149,7 +157,6 @@ void MainWindow :: onBtnOpen( ){
           srcCode.clear();
           currentFile.addFile( dialog.get_filename() );
           loadFile();
-          mainPane.updateSrc( srcCode );
      } else if ( result != Gtk::RESPONSE_CANCEL ){
           std::cerr << "What the fuck happened?" << std::endl;
      }
@@ -178,6 +185,19 @@ void MainWindow :: onBtnContinue(){
      mainPane.update( line, &registers );
 }
 
+void MainWindow :: onBtnMemory (){
+     size_t start = 0, end = 0;
+     InputDialog dialog(&start,&end );
+     dialog.set_transient_for( *this );
+     dialog.run();
+     AppendBuffer buff;
+     if ( start && end  && ( end > start ) ){
+          char *x = debug.getMem( buff , start ,end-start );
+          logs.addToMemBuff( x, buff.len );
+          std::cout << x << std::endl;
+     }
+}
+
 MainWindow :: MainWindow ():\
           srcBuff( nullptr ),\
           srcSize(0),\
@@ -185,7 +205,7 @@ MainWindow :: MainWindow ():\
           binSize(0),\
           executable( false ),\
           box(Gtk::ORIENTATION_VERTICAL),\
-          menu( this, &MainWindow :: onBtnOpen, &MainWindow::onBtnStep, &MainWindow::onBtnBreak),\
+          menu( this ),\
           logs( &mainPane )\
 {
      // Set window sizes and such
@@ -225,6 +245,36 @@ MainWindow :: ~MainWindow (){
      if ( binBuff ){
           delete []binBuff;
      }
+}
+
+
+InputDialog :: InputDialog(size_t *a, size_t *b ):label1("Start address"),label2("End Address"),s1(a),s2(b),btn("Ok"){
+     entry1.set_max_length( 50 );
+     entry2.set_max_length( 50 );
+     Gtk::Box *box = get_vbox();
+     box->pack_start( label1 );
+     box->pack_start( entry1 );
+     box->pack_start( label2 );
+     box->pack_start( entry2 );
+     box->pack_start( btn ); 
+     btn.signal_clicked().connect( sigc::mem_fun( *this, &InputDialog::onBtnClick ) );
+     show_all_children();
+}
+
+void InputDialog::onBtnClick(){
+     std::string text2( entry1.get_text() + " " + entry2.get_text() );
+     std::istringstream stream(text2);
+     stream.unsetf( std::ios::dec );
+     stream.unsetf( std::ios::oct );
+     stream.unsetf( std::ios::hex );
+     size_t a, b;
+     stream >> a ;
+     stream >> b;
+     if ( !stream ){
+          a = 0; b = 0;
+     }
+     *s1 = a; *s2 = b;
+     hide();
 }
 
 #undef ASM_FILE

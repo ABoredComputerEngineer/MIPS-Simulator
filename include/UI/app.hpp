@@ -1,11 +1,24 @@
 #ifndef APP_MAIN_UI_HPP
 
 #define APP_MAIN_UI_HPP
+#include <sstream>
 #include <Debugger/debug.hpp>
 #include <UI/common.hpp>
 #include <UI/buttonBox.hpp>
 #include <UI/mainPane.hpp>
 #include <UI/logDisplay.hpp>
+
+class InputDialog : public Gtk::Dialog {
+     public:
+          Gtk::Label label1, label2;
+          Gtk::Entry entry1;
+          Gtk::Entry entry2;
+          Gtk::Button btn;
+          size_t *s1,*s2;
+          InputDialog(size_t *a,size_t *b);
+          void onBtnClick();
+};
+
 class MainWindow : public Gtk::Window {
      private:
           FileInfo currentFile;
@@ -33,6 +46,7 @@ class MainWindow : public Gtk::Window {
           void onBtnStep();
           void onBtnBreak();
           void onBtnContinue();
+          void onBtnMemory();
           void loadFile(); // loads the file denoted by the currentFile
 
 };
