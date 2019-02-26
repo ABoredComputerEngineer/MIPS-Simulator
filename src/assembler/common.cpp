@@ -227,6 +227,7 @@ char *AppendBuffer::append( const char *fmt , ... ){
         //cap = 2 * ( len + printLen  + 1 );
     }
     assert( len + printLen < cap );
+    end = buff + len; // if buff value is changed after reallocation, get the correct value
     size_t freeSpace = cap-len;
     va_start(args,fmt);
     printLen = vsnprintf(end,freeSpace,fmt,args);

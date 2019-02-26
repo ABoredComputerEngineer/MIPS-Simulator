@@ -169,6 +169,11 @@ void MainWindow :: onBtnStep (){
           size_t line = debug.getLineNumber();
           auto registers = debug.getRegisters();
           mainPane.update( line, &registers );
+          char *x = debug.getMem( memBuff , memStart,byteCount );
+          //std::cout << x << std::endl;
+          logs.addToMemBuff( x, memBuff.len );
+          //assert( buff.len == strlen( x ) );
+          memBuff.clearBuff();
      }
 }
 
@@ -183,18 +188,23 @@ void MainWindow :: onBtnContinue(){
      size_t line = debug.getLineNumber();
      auto registers = debug.getRegisters();
      mainPane.update( line, &registers );
+     char *x = debug.getMem( memBuff , memStart ,byteCount );
+     logs.addToMemBuff( x, memBuff.len );
+     memBuff.clearBuff();
 }
 
 void MainWindow :: onBtnMemory (){
-     size_t start = 0, end = 0;
-     InputDialog dialog(&start,&end );
+     InputDialog dialog(&memStart,&byteCount);
      dialog.set_transient_for( *this );
      dialog.run();
-     AppendBuffer buff;
-     if ( start && end  && ( end > start ) ){
-          char *x = debug.getMem( buff , start ,end-start );
-          logs.addToMemBuff( x, buff.len );
+//     AppendBuffer buff;
+//     std::cout << "(" << start << "," << end << ")" << std::endl;
+     if ( byteCount > 0 ){
+          char *x = debug.getMem( memBuff , memStart ,byteCount );
           std::cout << x << std::endl;
+          logs.addToMemBuff( x, memBuff.len );
+//          assert( memBuff.len == strlen( x ) );
+          memBuff.clearBuff();
      }
 }
 
@@ -206,7 +216,9 @@ MainWindow :: MainWindow ():\
           executable( false ),\
           box(Gtk::ORIENTATION_VERTICAL),\
           menu( this ),\
-          logs( &mainPane )\
+          logs( &mainPane ),\
+          memStart( 0x4fc ),\
+          byteCount( 0x5f0 )\
 {
      // Set window sizes and such
      set_title("Main Window");
@@ -248,7 +260,7 @@ MainWindow :: ~MainWindow (){
 }
 
 
-InputDialog :: InputDialog(size_t *a, size_t *b ):label1("Start address"),label2("End Address"),s1(a),s2(b),btn("Ok"){
+InputDialog :: InputDialog(size_t *a, size_t *b ):label1("Start address"),label2("Number of Bytes"),s1(a),s2(b),btn("Ok"){
      entry1.set_max_length( 50 );
      entry2.set_max_length( 50 );
      Gtk::Box *box = get_vbox();
@@ -272,8 +284,9 @@ void InputDialog::onBtnClick(){
      stream >> b;
      if ( !stream ){
           a = 0; b = 0;
+     } else {
+          *s1 = a; *s2 = b;
      }
-     *s1 = a; *s2 = b;
      hide();
 }
 

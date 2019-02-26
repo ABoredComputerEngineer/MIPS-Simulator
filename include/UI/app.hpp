@@ -32,6 +32,8 @@ class MainWindow : public Gtk::Window {
           bool executable; // is true if we load the bin file or run the assembler in the asm file
           std::vector < std::string > srcCode;
           std::vector < std::string > values;
+          AppendBuffer memBuff;
+          size_t memStart, byteCount;
           ButtonBox menu;
           MainPane mainPane;
           LogDisplay logs;

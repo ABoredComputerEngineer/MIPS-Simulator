@@ -62,11 +62,14 @@ char *AppendBuffer::append( const char *fmt , ... ){
     va_list args;
     va_start( args, fmt );
     size_t printLen = vsnprintf(NULL,0,fmt,args);
-    if ( len + printLen + 1 >= cap ){
-        buff = (char * )realloc(buff, 2 * ( len + printLen + 1 ) );
-        assert( buff );
+    if ( len + printLen + 1 >= cap ){ 
+         // Grow the buffer
+        char *x = (char * )realloc(buff, 2 * ( len + printLen + 1 ) );
+        assert( x );
+        buff = x;
         cap = 2 * ( len + printLen  + 1 );
     }
+    end = buff + len;
     assert( len + printLen < cap );
     size_t freeSpace = cap-len;
     va_start(args,fmt);
