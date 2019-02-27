@@ -112,6 +112,7 @@ class Debugger {
      inline std::string getSrcPath() { return dbgSection.srcPath; }
      inline bool isExceptionRaised() { return hasException; }
      inline size_t getLineNumber( ) { return currentLine; }
+     void resetExecution();
      ProgramException &getExceptionInfo( );
 };
 

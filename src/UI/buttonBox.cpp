@@ -7,7 +7,8 @@ ButtonBox :: ButtonBox(MainWindow *m):\
           stepBtn("Step"),\
           breakBtn("Break"),\
           continueBtn("Continue"),\
-          memBtn("Memory")\
+          memBtn("Memory"),\
+          resetBtn("Reset")\
 {
 #define BUTTON_DIM 75 
 #define BUTTON_SPACING 20
@@ -20,6 +21,7 @@ ButtonBox :: ButtonBox(MainWindow *m):\
      attach(breakBtn,7,1,1,1);
      attach(continueBtn,9,1,1,1);
      attach(memBtn,11,1,1,1);
+     attach(resetBtn,13,1,1,1);
      set_column_spacing(BUTTON_SPACING);
 #undef BUTTON_DIM
 #undef BUTTON_SPACING
@@ -32,4 +34,5 @@ void ButtonBox :: connectButtons(){
      breakBtn.signal_clicked().connect( sigc::mem_fun( *parent,&MainWindow::onBtnBreak) ); 
      continueBtn.signal_clicked().connect( sigc::mem_fun( *parent,&MainWindow::onBtnContinue) ); 
      memBtn.signal_clicked().connect( sigc::mem_fun( *parent, &MainWindow::onBtnMemory) );
+     resetBtn.signal_clicked().connect( sigc::mem_fun( *parent, &MainWindow::onBtnReset) );
 }

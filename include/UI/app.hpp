@@ -53,6 +53,7 @@ class MainWindow : public Gtk::Window {
           void onBtnContinue();
           void onBtnMemory();
           void onBtnAssemble();
+          void onBtnReset();
           void loadFile(); // loads the file denoted by the currentFile
 
 };

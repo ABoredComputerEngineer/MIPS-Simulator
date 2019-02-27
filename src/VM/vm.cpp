@@ -294,7 +294,10 @@ void Machine::reset(){
     reg[SP] = memory.endWord();
     reg[GP] = memory.staticStart;
     pc = memory.textStart;
-    memory.set(0);
+    auto start = memory.vals + memory.staticStart;
+    auto bytes = memory.byteCount  - memory.staticStart;
+    memset( start, 0, bytes );
+//    memory.set(0);
 }
 
 void Machine::readDebugInfo(std::ifstream &inFile ){

@@ -92,6 +92,9 @@ bool processCommand( Debugger &debug,const char *line ){
                std::cout << "Error!" << std::endl << std::endl;
           }
           printBuffer.clearBuff();
+     } else if ( word == "reset" ){
+          debug.resetExecution();
+          displayCurrentSource( debug.getLineNumber() );
      }
      return false;
 }

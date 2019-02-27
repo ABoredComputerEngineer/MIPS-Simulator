@@ -288,4 +288,10 @@ char* Debugger :: getMem(AppendBuffer &buff, size_t address, size_t bytes ){
      return buff.getBuff();
 }
 
+void Debugger :: resetExecution(){
+     machine.resetMachine();
+     hasException = false;
+     currentLine = insNumberToLineMap[machine.getNextInsNumber()];
+}
+
 

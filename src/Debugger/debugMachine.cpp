@@ -123,4 +123,8 @@ RegisterInfo DebugMachine::getRegisterInfo(){
 RequestException :: RequestException( RequestException::ExceptionType t, const char *s ):\
     type(t), err(s){}
 
-
+void DebugMachine::resetMachine(){
+     reset();
+     halted = false;
+     exceptionRaised = false;
+}

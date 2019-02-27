@@ -213,8 +213,6 @@ void MainWindow :: onBtnMemory (){
      InputDialog dialog(&memStart,&byteCount);
      dialog.set_transient_for( *this );
      dialog.run();
-//     AppendBuffer buff;
-//     std::cout << "(" << start << "," << end << ")" << std::endl;
      if ( byteCount > 0 ){
           char *x = debug.getMem( memBuff , memStart ,byteCount );
           std::cout << x << std::endl;
@@ -260,6 +258,17 @@ void MainWindow :: onBtnAssemble(){
      auto x = debug.getLineNumber();
      std::cout << "Line Number " << x << std::endl;
      mainPane.update( x, nullptr );
+}
+void MainWindow :: onBtnReset (){
+     debug.resetExecution();
+     size_t line = debug.getLineNumber();
+     auto registers = debug.getRegisters();
+     mainPane.update( line, &registers );
+     char *x = debug.getMem( memBuff , memStart,byteCount );
+     //std::cout << x << std::endl;
+     logs.addToMemBuff( x, memBuff.len );
+     //assert( buff.len == strlen( x ) );
+     memBuff.clearBuff();
 }
 
 MainWindow :: MainWindow ():\

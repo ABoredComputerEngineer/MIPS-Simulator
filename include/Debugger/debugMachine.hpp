@@ -49,6 +49,8 @@ class DebugMachine : public Machine {
      RegisterInfo getRegisterInfo();
      inline ExceptionType getException(){ return type;}
      inline byte* getMemAt( size_t address ) { return memory.vals + address; };
+     inline void setRegister( int regNumber, Word value ){ reg[regNumber] = value; }
+     void resetMachine();
 };
 extern std::unordered_map < Machine::ExceptionType , std::string, ExceptionClassHash > exceptStr; // defined in debugMachine.cpp
 #endif
