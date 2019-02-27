@@ -141,6 +141,7 @@ void Debugger :: printHaltedMessage(){
 void Debugger :: singleStep(){
      hasException = false;
      // check if the instruction to be executed has a breakpoint
+     machine.executeSingle();
      if ( breakPointMap.count( currentLine ) ){
           // there is a breakpoint
           BreakPoint &breakpoint = breakPointMap[ currentLine ];
@@ -150,10 +151,7 @@ void Debugger :: singleStep(){
           machine.setPC( w );
           machine.executeSingle();
           breakpoint.enable();
-     } else{
-          // there is no break point
-          machine.executeSingle();
-     }
+     } 
      if ( machine.isHalted() ){
           printHaltedMessage();
      }
@@ -171,13 +169,6 @@ void Debugger :: singleStep(){
                               getExceptionString( type ),\
                               &exceptStr[type] );
                     hasException = true;
-#if 0
-                    pBuffer.append("Exception raised by instruction at address 0x%lx.\n", machine.getPC() );
-                    pBuffer.append("Instrucion: %s\n",srcCode[line -1].c_str() );
-                    pBuffer.append("Instruction Code: %llx\n",lineToInsMap[ line ] );
-                    pBuffer.append("Exception Type: %s\n", getExceptionString( type ) );
-                    pBuffer.append("Exception Info: %s\n", exceptStr[ type ].c_str() ); 
-#endif
                }
           }
           machine.clearSR();
@@ -209,6 +200,7 @@ void Debugger :: continueExecution (){
                     &exceptStr[type] );
           machine.clearSR();
           machine.setExceptionFlag(false);
+          machine.setPC( machine.getPC() - 4 );
      }
 }
 
