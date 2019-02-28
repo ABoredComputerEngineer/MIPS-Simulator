@@ -174,7 +174,7 @@ void MainWindow :: onBtnOpen( ){
           currentFile.addFile( dialog.get_filename() );
           loadFile();
      } else if ( result != Gtk::RESPONSE_CANCEL ){
-          std::cerr << "What the fuck happened?" << std::endl;
+          std::cerr << "Error!" << std::endl;
      }
 }
 
