@@ -94,8 +94,9 @@ void MemoryDisplay :: updateBuffer( const char *start, const char *end ){
 
 LogDisplay :: LogDisplay ( MainPane *p ):errDisplay( p ){
      set_size_request( 1000,200 );
-     append_page( errDisplay );
-     append_page( memDisplay );
+
+     append_page( errDisplay, "Errors" );
+     append_page( memDisplay, "Memory" );
      show_all_children();
 }
 

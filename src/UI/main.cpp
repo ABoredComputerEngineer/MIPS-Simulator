@@ -10,7 +10,5 @@ int main( int argc, char *argv[] ){
      extensionMap[ Gui::asmExt ] = FileInfo::Extension::EXT_ASM;
      auto app = Gtk::Application::create( argc, argv, "Example" );
      MainWindow window;
-     string s("Fuuuuck");
-     window.memoryData( s.c_str(), s.size());
      return app->run( window );
 }

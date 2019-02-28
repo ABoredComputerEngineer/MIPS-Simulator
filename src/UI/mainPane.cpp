@@ -45,7 +45,7 @@ MainPane :: MainPane ( vector < string > &code, vector < string > &values ):\
 }
 
 MainPane :: MainPane (){
-     std::cout << "Calling MainPane Empty constructor" << std::endl;
+     //std::cout << "Calling MainPane Empty constructor" << std::endl;
      set_position( RIGHT_WIDTH );
      set_size_request( PANE_WIDTH , PANE_HEIGHT );
 
@@ -82,7 +82,7 @@ long long SourceView ::getLineNumber() {
 
 
 SourceView :: SourceView () {
-     std::cout << "Calling SourceView Empty constructor" << std::endl;
+     //std::cout << "Calling SourceView Empty constructor" << std::endl;
      set_policy( Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC );
      //set_size_request( 300, 200);
      add( treeView );
@@ -122,7 +122,7 @@ void SourceView :: newSrc ( vector < string > &code ){
 
 
 RegisterView :: RegisterView () {
-     std::cout << "Calling RegisterView Empty constructor" << std::endl;
+     //std::cout << "Calling RegisterView Empty constructor" << std::endl;
      char buff[32];
      set_policy( Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC );
      //set_size_request( 300, 200);
@@ -130,7 +130,7 @@ RegisterView :: RegisterView () {
      refList = Gtk::ListStore::create( entry );
      treeView.set_model( refList );
      
-     std::cout << "Empty initializing registers" << std::endl;     
+     //std::cout << "Empty initializing registers" << std::endl;     
      for ( size_t i = 0; i < REGISTER_COUNT ; i++ ){
           auto row = *( refList->append() );
           snprintf(buff,32,"0x%08x",0 ); 

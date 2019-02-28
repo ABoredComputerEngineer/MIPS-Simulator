@@ -29,8 +29,8 @@ FileInfo :: FileInfo ( const std::string &s ):filePath(s){
           assert( 0 );
           ext = BIN_FILE;
      }
-     std::cout << "Ext " << std::endl;
-     std::cout << ext << std::endl;;
+//     std::cout << "Ext " << std::endl;
+//     std::cout << ext << std::endl;;
 }
 
 FileInfo :: FileInfo () :ext(0){}
@@ -38,13 +38,13 @@ FileInfo :: FileInfo () :ext(0){}
 void FileInfo :: addFile( const std::string &s ){
      filePath = s;
      std::string extension = getExtension( s );
-     std::cout << extension << std::endl;
+     //std::cout << extension << std::endl;
      if ( extension == ".asm" ){
-          std::cout << "Loading Asm file " << std::endl;
+          //std::cout << "Loading Asm file " << std::endl;
           ext = ASM_FILE;
      } else if ( extension == ".bin" ){
           ext = BIN_FILE;
-          std::cout << "Loading bin file" << std::endl;
+          //std::cout << "Loading bin file" << std::endl;
      }
      genFileDirectory();
 }
@@ -59,8 +59,8 @@ void FileInfo :: genFileDirectory(){
      auto nameBegin = iter;
      for ( ; iter != filePath.end() && *iter != '.' ; iter++ );
      fileName = std::string ( nameBegin, iter );
-     std::cout << fileDirectory << std::endl;
-     std::cout << fileName << std::endl;
+     //std::cout << fileDirectory << std::endl;
+     //std::cout << fileName << std::endl;
 }
 
 
@@ -84,7 +84,7 @@ void MainWindow :: loadBin(std::ifstream &inFile, size_t fsize){
           binBuff = new char[ binSize + 1 ];
      }
      inFile.read( binBuff, binSize );
-     std::cout << "Loading program in the machine " << std::endl;
+     //std::cout << "Loading program in the machine " << std::endl;
      try{
           debug.loadProgram( binBuff, binSize );
      } catch ( MachineException &m ){
@@ -103,20 +103,20 @@ void MainWindow :: loadAsm(std::ifstream &inFile, size_t fsize){
      } 
      char *str = srcBuff;
      std::string s;
-     std::cout << "Print vector " << std::endl;
+     //std::cout << "Print vector " << std::endl;
      while ( getline( inFile , s ) ){
           srcCode.push_back( s );
-          std::cout << s << std::endl ;
+          //std::cout << s << std::endl ;
           snprintf(str,s.length()  + 2, "%s\n", s.c_str() );
           str  += ( s.length() + 1  );
      }
-     std::cout<< "Print Buffer" << std::endl;
-     std::cout << srcBuff<< std::endl;
+     //std::cout<< "Print Buffer" << std::endl;
+     //std::cout << srcBuff<< std::endl;
 }
 
 
 void MainWindow :: loadFile (){
-     std::cout << currentFile.filePath << std::endl;
+     //std::cout << currentFile.filePath << std::endl;
      std::ifstream inFile( currentFile.filePath, std::ios::binary );
      inFile.seekg( 0, std::ios::end );
      size_t fsize = inFile.tellg();
@@ -128,11 +128,11 @@ void MainWindow :: loadFile (){
           loadAsm(inFile, fsize);
      } else if ( strcmp( s.c_str(),".bin" ) == 0 ){
           executable = true;
-          std::cout << "Loading bin file" << std::endl;
+          //std::cout << "Loading bin file" << std::endl;
           loadBin( inFile, fsize );
           // load the asm source file
           auto src = debug.getSrcPath();
-          std::cout << src << std::endl;
+          //std::cout << src << std::endl;
           std::ifstream asmFile( src, std::ios::binary | std::ios::in );
           size_t size = fileSize( asmFile );
           loadAsm( asmFile, size );
@@ -142,7 +142,7 @@ void MainWindow :: loadFile (){
      mainPane.updateSrc( srcCode );
      if ( executable ){
      auto x = debug.getLineNumber();
-     std::cout << "Line Number " << x << std::endl;
+     //std::cout << "Line Number " << x << std::endl;
      mainPane.update( x, nullptr );
      } else {
           mainPane.update( 1, nullptr );
@@ -179,7 +179,7 @@ void MainWindow :: onBtnOpen( ){
 }
 
 void MainWindow :: onBtnStep (){
-     std::cout << executable << std::endl;
+     //std::cout << executable << std::endl;
      if ( executable ){
           debug.singleStep();
           size_t line = debug.getLineNumber();
@@ -194,7 +194,7 @@ void MainWindow :: onBtnStep (){
 }
 
 void MainWindow :: onBtnBreak(){
-     std::cout << "Breaking" << std::endl;
+     //std::cout << "Breaking" << std::endl;
      long long line = mainPane.getSelectedLineNumber();
      debug.setBreakPoint( line );
 }
@@ -215,7 +215,7 @@ void MainWindow :: onBtnMemory (){
      dialog.run();
      if ( byteCount > 0 ){
           char *x = debug.getMem( memBuff , memStart ,byteCount );
-          std::cout << x << std::endl;
+          //std::cout << x << std::endl;
           logs.addToMemBuff( x, memBuff.len );
 //          assert( memBuff.len == strlen( x ) );
           memBuff.clearBuff();
@@ -224,16 +224,16 @@ void MainWindow :: onBtnMemory (){
 
 
 void MainWindow :: onBtnAssemble(){
-     std::cout << "Assembling the file " << std::endl;
+     //std::cout << "Assembling the file " << std::endl;
      labelMap.clear();
      if ( !srcBuff ){
-          std::cout << "Open a file first!" << std::endl;
+          // std::cout << "Open a file first!" << std::endl;
           return;
      }
      Generator gen(srcBuff, currentFile.filePath.c_str(), true);
-     std::cout << "Parsing the file " << std::endl;
+     //std::cout << "Parsing the file " << std::endl;
      bool success = gen.parseFile();
-     std::cout << "Parse Success " << std::endl;
+     // std::cout << "Parse Success " << std::endl;
      if ( !success  ){
           logs.addToErrBuff( errorList );
           return;
@@ -256,7 +256,7 @@ void MainWindow :: onBtnAssemble(){
      executable = true;
      loadBin( binFile, size ) ;
      auto x = debug.getLineNumber();
-     std::cout << "Line Number " << x << std::endl;
+     //std::cout << "Line Number " << x << std::endl;
      mainPane.update( x, nullptr );
 }
 void MainWindow :: onBtnReset (){
