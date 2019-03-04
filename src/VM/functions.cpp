@@ -135,6 +135,14 @@ void Machine::xori(){
     reg[RT(currentIns)] = reg[RS(currentIns)] ^ imm ;
 }
 
+void Machine::mult(){
+    size_t rs = getBits(currentIns,25,21);
+    size_t rt = getBits(currentIns,20,16);
+    size_t rd = getBits(currentIns,15,11);
+    reg[rd] = reg[rs] * reg[rt] ;
+
+}
+
 void Machine::lb(){
 /* 
  * A more verbose version:

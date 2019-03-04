@@ -171,6 +171,7 @@ class Machine {
     void slti();
     void sltiu();
     void xori();
+    void mult();
 
     void lb();
     void lh();

@@ -264,6 +264,7 @@ void Machine::addFunctions( ){
     ADD_FUNCTION(64+42,slt);
     ADD_FUNCTION(64+43,sltu);
     ADD_FUNCTION(64+8,jr);
+    ADD_FUNCTION(64+24,mult);
 
     ADD_FUNCTION(2,jmp);
     ADD_FUNCTION(3,jal);

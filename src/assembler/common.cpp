@@ -20,6 +20,7 @@ void initIns( ){
     ADD_INSR(subr,34,AL);
     ADD_INSR(subu,35,AL);
     ADD_INSR(and,36,AL);
+    ADD_INSR(mult,24,AL);
     ADD_INSR(or,37,AL);
     ADD_INSR(xor,38,AL);
     ADD_INSR(nor,39,AL);
@@ -62,6 +63,7 @@ void initKeyword(){
     ADD_KEYWORD(sll);
     ADD_KEYWORD(subr);
     ADD_KEYWORD(subu);
+    ADD_KEYWORD(mult);
     ADD_KEYWORD(and);
     ADD_KEYWORD(or);
     ADD_KEYWORD(xor);

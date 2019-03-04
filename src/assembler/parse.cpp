@@ -12,146 +12,146 @@ ExpressionException:: ExpressionException( ExpressionException:: Type  t, Lexer:
     type(t), kind(k){}
 
 ParseObj :: ParseObj ( const Instruction &i, string const &s, size_t x,size_t y ): ins(i),insString(s),line(x),insNumber(y) {
-    if ( ins.insClass == Instruction::ITYPE ){
-        setItype(0,0,0);
-    } else if ( ins.insClass == Instruction :: RTYPE ){
-        setRtype( 0, 0 , 0);
-    } else if ( ins.insClass == Instruction :: BRTYPE ){
-        props.Branch.offset = 0;
-    } else if ( ins.insClass == Instruction:: JTYPE ){
-        props.Jump.addr = 0;
-    }
+     if ( ins.insClass == Instruction::ITYPE ){
+         setItype(0,0,0);
+     } else if ( ins.insClass == Instruction :: RTYPE ){
+         setRtype( 0, 0 , 0);
+     } else if ( ins.insClass == Instruction :: BRTYPE ){
+         props.Branch.offset = 0;
+     } else if ( ins.insClass == Instruction:: JTYPE ){
+         props.Jump.addr = 0;
+     }
 }
 ParseObj::ParseObj ( Instruction ins, int a, int b, int c , int d){
-    if ( ins.insClass == Instruction :: RTYPE ){
-        props.Rtype.rs = a;
-        props.Rtype.rt = b;
-        props.Rtype.rd = c;
-        props.Rtype.shamt = d;
-    } else if ( ins.insClass == Instruction :: ITYPE ){
-        props.Itype.rs = a;
-        props.Itype.rt = b;
-        props.Itype.addr = c;
-    } else if ( ins.insClass == Instruction:: JTYPE ){
-        props.Jump.addr = a;
-    } else {
-        props.Branch.rs = a;
-        props.Branch.rt = b;
-        props.Branch.offset = c;
-    }
+     if ( ins.insClass == Instruction :: RTYPE ){
+         props.Rtype.rs = a;
+         props.Rtype.rt = b;
+         props.Rtype.rd = c;
+         props.Rtype.shamt = d;
+     } else if ( ins.insClass == Instruction :: ITYPE ){
+         props.Itype.rs = a;
+         props.Itype.rt = b;
+         props.Itype.addr = c;
+     } else if ( ins.insClass == Instruction:: JTYPE ){
+         props.Jump.addr = a;
+     } else {
+         props.Branch.rs = a;
+         props.Branch.rt = b;
+         props.Branch.offset = c;
+     }
 }
 
 ParseObj::~ParseObj (){ }
 void ParseObj :: setJr ( Integer rs ){
-    props.Jr.rs = rs;
+     props.Jr.rs = rs;
 }
 void ParseObj::setItype ( Integer rs, Integer rt, Integer addr ){
-    props.Itype.rs = rs;
-    props.Itype.rt = rt;
-    props.Itype.addr = addr;
+     props.Itype.rs = rs;
+     props.Itype.rt = rt;
+     props.Itype.addr = addr;
 }
 
 void ParseObj::setBranch( Integer rs, Integer rt, const char *s ){
-    props.Branch.rs = rs;
-    props.Branch.rt = rt;
-    strcpy( props.Branch.label, s );
-//    props.Branch.label = s;
-    props.Branch.offset = 0;
+     props.Branch.rs = rs;
+     props.Branch.rt = rt;
+     strcpy( props.Branch.label, s );
+//     props.Branch.label = s;
+     props.Branch.offset = 0;
 }
 
 void ParseObj::setBranch( Integer rs, Integer rt, Integer off ){
-    props.Branch.rs = rs;
-    props.Branch.rt = rt;
-    props.Branch.offset = off;
+     props.Branch.rs = rs;
+     props.Branch.rt = rt;
+     props.Branch.offset = off;
 }
 
 void ParseObj::setJump( Integer address ){
-    props.Jump.addr = address;
+     props.Jump.addr = address;
 }
 
 void ParseObj::setJump( const char *s ){
-    strcpy( props.Jump.label , s );
+     strcpy( props.Jump.label , s );
 }
 #define print(x) ( std::cout << x )
 #define printl(x) ( std::cout << x << std::endl )
 #define print2l( x, y ) ( std::cout << ( x ) << ( y ) << std::endl )
 void ParseObj :: display () const {
-    std::cout << std:: dec ;
-    print2l( "Instruction : " , insString );
-    print2l( "op = ", ins.opcode );
-    if ( ins.insClass == Instruction::RTYPE  ){
-        print2l("rs = ", props.Rtype.rs );
-        print2l("rt = ", props.Rtype.rt );
-        print2l("rd = ", props.Rtype.rd);
-        print2l("shamt = ", props.Rtype.shamt);
-        print2l("func = ", ins.func );
-    } else if ( ins.insClass == Instruction :: ITYPE ){
-        print2l("rs = ", props.Itype.rs );
-        print2l("rt = ", props.Itype.rt );
-        print2l("immediate = ", props.Itype.addr );
-    } else if ( ins.insClass == Instruction :: BRTYPE ){
-        print2l("rs = ",props.Branch.rs );
-        print2l( "rt = ", props.Branch.rt );
-        print2l( "Word offset = ", props.Branch.offset );
-        if ( props.Branch.label ){
-            print2l( "Label name = ", props.Branch.label );
-        }
-    } else if ( ins.insClass == Instruction :: JTYPE ) {
-        print2l("Word address = ",  props.Jump.addr );
-        if( props.Jump.label ){ print2l("Label name = ", props.Jump.label ); }
-    } else if ( ins.insClass == Instruction:: PTYPE ){
-        if ( ins.opcode == 0 ){
-            switch( ins.func ){
-                case 8: // jr
-                    print2l("rs = ", props.Jr.rs);
-                    print2l("func = ", ins.func );
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    printl("");
+     std::cout << std:: dec ;
+     print2l( "Instruction : " , insString );
+     print2l( "op = ", ins.opcode );
+     if ( ins.insClass == Instruction::RTYPE  ){
+         print2l("rs = ", props.Rtype.rs );
+         print2l("rt = ", props.Rtype.rt );
+         print2l("rd = ", props.Rtype.rd);
+         print2l("shamt = ", props.Rtype.shamt);
+         print2l("func = ", ins.func );
+     } else if ( ins.insClass == Instruction :: ITYPE ){
+         print2l("rs = ", props.Itype.rs );
+         print2l("rt = ", props.Itype.rt );
+         print2l("immediate = ", props.Itype.addr );
+     } else if ( ins.insClass == Instruction :: BRTYPE ){
+         print2l("rs = ",props.Branch.rs );
+         print2l( "rt = ", props.Branch.rt );
+         print2l( "Word offset = ", props.Branch.offset );
+         if ( props.Branch.label ){
+             print2l( "Label name = ", props.Branch.label );
+         }
+     } else if ( ins.insClass == Instruction :: JTYPE ) {
+         print2l("Word address = ",  props.Jump.addr );
+         if( props.Jump.label ){ print2l("Label name = ", props.Jump.label ); }
+     } else if ( ins.insClass == Instruction:: PTYPE ){
+         if ( ins.opcode == 0 ){
+             switch( ins.func ){
+                 case 8: // jr
+                     print2l("rs = ", props.Jr.rs);
+                     print2l("func = ", ins.func );
+                     break;
+                 default:
+                     break;
+             }
+         }
+     }
+     printl("");
 }
 
 void ParseObj::dumpToBuff( AppendBuffer &buff ){
-    buff.append( "Instruction: %s\n" , insString.c_str() );
-    buff.append( "op = %d\n", ins.opcode );
-    if ( ins.insClass == Instruction::RTYPE  ){
-        buff.append("rs = %ld\n", props.Rtype.rs );
-        buff.append("rt = %ld\n", props.Rtype.rt );
-        buff.append("rd = %ld\n", props.Rtype.rd);
-        buff.append("shamt = %ld\n", props.Rtype.shamt);
-        buff.append("func = %ld\n", ins.func );
-    } else if ( ins.insClass == Instruction :: ITYPE ){
-        buff.append("rs = %ld\n", props.Itype.rs );
-        buff.append("rt = %ld\n", props.Itype.rt );
-        buff.append("immediate = %llx\n", props.Itype.addr );
-    } else if ( ins.insClass == Instruction :: BRTYPE ){
-        buff.append("rs = %ld\n",props.Branch.rs );
-        buff.append( "rt = %ld\n", props.Branch.rt );
-        buff.append( "Word offset = 0x%llx\n", props.Branch.offset );
-        if ( props.Branch.label ){
-            buff.append( "Label name = %s\n", props.Branch.label );
-        }
-    } else if ( ins.insClass == Instruction :: JTYPE ) {
-        buff.append("Word address = 0x%llx\n",  props.Jump.addr );
-        if( props.Jump.label ){
-            buff.append("Label name = %s", props.Jump.label );
-        }
-    } else if ( ins.insClass == Instruction:: PTYPE ){
-        if ( ins.opcode == 0 ){
-            switch( ins.func ){
-                case 8: // jr
-                    buff.append("rs = %ld\n", props.Jr.rs);
-                    buff.append("func = %ld\n", ins.func );
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    buff.append("\n");
+     buff.append( "Instruction: %s\n" , insString.c_str() );
+     buff.append( "op = %d\n", ins.opcode );
+     if ( ins.insClass == Instruction::RTYPE  ){
+         buff.append("rs = %ld\n", props.Rtype.rs );
+         buff.append("rt = %ld\n", props.Rtype.rt );
+         buff.append("rd = %ld\n", props.Rtype.rd);
+         buff.append("shamt = %ld\n", props.Rtype.shamt);
+         buff.append("func = %ld\n", ins.func );
+     } else if ( ins.insClass == Instruction :: ITYPE ){
+         buff.append("rs = %ld\n", props.Itype.rs );
+         buff.append("rt = %ld\n", props.Itype.rt );
+         buff.append("immediate = %llx\n", props.Itype.addr );
+     } else if ( ins.insClass == Instruction :: BRTYPE ){
+         buff.append("rs = %ld\n",props.Branch.rs );
+         buff.append( "rt = %ld\n", props.Branch.rt );
+         buff.append( "Word offset = 0x%llx\n", props.Branch.offset );
+         if ( props.Branch.label ){
+             buff.append( "Label name = %s\n", props.Branch.label );
+         }
+     } else if ( ins.insClass == Instruction :: JTYPE ) {
+         buff.append("Word address = 0x%llx\n",  props.Jump.addr );
+         if( props.Jump.label ){
+             buff.append("Label name = %s", props.Jump.label );
+         }
+     } else if ( ins.insClass == Instruction:: PTYPE ){
+         if ( ins.opcode == 0 ){
+             switch( ins.func ){
+                 case 8: // jr
+                     buff.append("rs = %ld\n", props.Jr.rs);
+                     buff.append("func = %ld\n", ins.func );
+                     break;
+                 default:
+                     break;
+             }
+         }
+     }
+     buff.append("\n");
 }
 #undef print
 #undef printl
@@ -164,17 +164,17 @@ void ParseObj::setRtype( Integer reg1, Integer reg2, Integer reg3 ){
      * For other instructions they are interpreted as:
      * rd = reg1, rs = reg2, rt = reg3, shamt = 0
      */
-    if ( ins.isShift() ){
-        props.Rtype.rd = reg1; 
-        props.Rtype.rt = reg2; 
-        props.Rtype.shamt = reg3;
-        props.Rtype.rs = 0;
-    } else {
-        props.Rtype.rd = reg1; 
-        props.Rtype.rs = reg2; 
-        props.Rtype.rt = reg3; 
-        props.Rtype.shamt = 0;
-    }
+     if ( ins.isShift() ){
+         props.Rtype.rd = reg1; 
+         props.Rtype.rt = reg2; 
+         props.Rtype.shamt = reg3;
+         props.Rtype.rs = 0;
+     } else {
+         props.Rtype.rd = reg1; 
+         props.Rtype.rs = reg2; 
+         props.Rtype.rt = reg3; 
+         props.Rtype.shamt = 0;
+     }
 }
 
 
@@ -183,75 +183,58 @@ void ParseObj::setRtype( Integer reg1, Integer reg2, Integer reg3 ){
  */
 
 Parser:: Parser ( const char *p ): instructions( p ),lex(p),err(false),parseSuccess(true),insCount(0), end(false){
-    currentStr.reserve(256);
-    lex.next(buff);
+     currentStr.reserve(256);
+     lex.next(buff);
 }
 
 void Parser::init(const char *p){
-    instructions = p;
-    lex.init(p);
-    lex.next(buff);
-    err = false;
+     instructions = p;
+     lex.init(p);
+     lex.next(buff);
+     err = false;
 }
 void Parser :: displayError(const char *fmt, ... ){
-    parseSuccess = false;
-    enum { BUFFER_SIZE = 1024 };
-    va_list args;
-    va_start( args, fmt );
-    char buffer[ BUFFER_SIZE ];
-    size_t len = snprintf(buffer,BUFFER_SIZE,"At line %zu:\n"\
-                        "Instruction : %s \nError: ", currentLine, currentStr.c_str() );
-    try {
-        if ( len > BUFFER_SIZE ){
-            throw "Allocated buffer is smaller than the error message !";
-        }
-    } catch (const char *msg){
-        std::cerr << msg << std::endl;
-    }
-    len = vsnprintf(buffer+len,BUFFER_SIZE-(len+1),fmt,args);
-    try {
-        if ( len > BUFFER_SIZE-(len+1) ){
-            throw "Allocated buffer is smaller than the error message !";
-        }
-    } catch (const char *msg){
-        std::cerr << msg << std::endl;
-    }
-    va_end(args);
-    std::cerr << buffer << std::endl << std::endl;
+     parseSuccess = false;
+     enum { BUFFER_SIZE = 1024 };
+     va_list args;
+     va_start( args, fmt );
+     char buffer[ BUFFER_SIZE ];
+     size_t len = snprintf(buffer,BUFFER_SIZE,"At line %zu:\n"\
+                         "Instruction : %s \nError: ", currentLine, currentStr.c_str() );
+     try {
+         if ( len > BUFFER_SIZE ){
+             throw "Allocated buffer is smaller than the error message !";
+         }
+     } catch (const char *msg){
+         std::cerr << msg << std::endl;
+     }
+     len = vsnprintf(buffer+len,BUFFER_SIZE-(len+1),fmt,args);
+     try {
+         if ( len > BUFFER_SIZE-(len+1) ){
+             throw "Allocated buffer is smaller than the error message !";
+         }
+     } catch (const char *msg){
+         std::cerr << msg << std::endl;
+     }
+     va_end(args);
+     std::cerr << buffer << std::endl << std::endl;
 }
 
 int Parser :: parseRegister(){
-#if 0
-    int i = -1;
-    if ( !err && !lex.isToken(Lexer::TOKEN_REGISTER) ){
-        err = true;
-        displayError("Expected register but instead got \'%s\'.",buff);
-    } else if ( !err ){
-        auto regs = regMap.find( string (buff) );
-        if ( regs != regMap.end() ){
-            i = regs->second;
-        } else {
-            err = true;
-            displayError("Invalid register %s.",buff);            
-        }
-        lex.next(buff);
-    }
-    return i;
-#endif
-    int regNumber = 0;
+     int regNumber = 0;
 
-    if ( !lex.isToken(Lexer::TOKEN_REGISTER) ){
-        throw RegisterException( RegisterException::Type::EXPECTED );
-    } else {
-        auto regs = regMap.find( string (buff) );
-        if ( regs != regMap.end() ){
-            regNumber = regs->second;
-            lex.next(buff);
-        } else {
-            throw RegisterException( RegisterException::Type::INVALID );
-        }
-    }
-    return regNumber;
+     if ( !lex.isToken(Lexer::TOKEN_REGISTER) ){
+          throw RegisterException( RegisterException::Type::EXPECTED );
+     } else {
+         auto regs = regMap.find( string (buff) );
+          if ( regs != regMap.end() ){
+              regNumber = regs->second;
+              lex.next(buff);
+          } else {
+              throw RegisterException( RegisterException::Type::INVALID );
+          }
+     }
+     return regNumber;
 }
 
 
@@ -260,82 +243,71 @@ int Parser::parseInt(){
     x = parseExpr();
     //lex.next( buff );
     return x;
-    #if 0
-    int i = 0;
-    if ( lex.isToken(Lexer::TOKEN_INT) ){
-        i = lex.getInt(); 
-        lex.next(buff);
-    } else if ( !err ){
-        err = true;
-        displayError("Expected integer value as an argument. Got \'%s\' instead.",buff);
-    }
-    return i;
-    #endif
 }
 
 void Parser::genRegisterError( RegisterException &e ){
-    errorBuffer.clearBuff();
-    if ( e.type == RegisterException :: EXPECTED){
-        errorBuffer.append("Expected a register but instead got \'%s\'.", buff);
-    }else  if ( e.type == RegisterException :: INVALID ){
-        errorBuffer.append("Invalid register name \'%s\'.",buff);
-    }
-    errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
-        currentLine,\
-        currentStr,\
-        errorBuffer.getBuff()\
+     errorBuffer.clearBuff();
+     if ( e.type == RegisterException :: EXPECTED){
+         errorBuffer.append("Expected a register but instead got \'%s\'.", buff);
+     }else  if ( e.type == RegisterException :: INVALID ){
+         errorBuffer.append("Invalid register name \'%s\'.",buff);
+     }
+     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
+         currentLine,\
+         currentStr,\
+         errorBuffer.getBuff()\
      ));
 }
 
 void Parser :: genLexerMatchError( LexerMatchException &l ){
-    errorBuffer.clearBuff();
-    const std::string &expected = lex.tokenMap[l.expected];  
-    const std::string &present = lex.tokenMap[l.present];
-    errorBuffer.append( "Expected token \'%s\' but insted got \'%s\'.", expected.c_str(),present.c_str());  
-    errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_LEXER,\
-        currentLine,\
-        currentStr,\
-        errorBuffer.getBuff()\
+     errorBuffer.clearBuff();
+     const std::string &expected = lex.tokenMap[l.expected];  
+     const std::string &present = lex.tokenMap[l.present];
+     errorBuffer.append( "Expected token \'%s\' but insted got \'%s\'.", expected.c_str(),present.c_str());  
+     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_LEXER,\
+         currentLine,\
+         currentStr,\
+         errorBuffer.getBuff()\
      ));
 
 }
 
 void Parser::genInstructionEndException(){
-    errorBuffer.clearBuff();
-    errorBuffer.append("Invalid number of arguments to the instruction");
-    errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
-        currentLine,\
-        currentStr,\
-        errorBuffer.getBuff()\
-    ));
+     errorBuffer.clearBuff();
+     errorBuffer.append("Invalid number of arguments to the instruction");
+     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
+         currentLine,\
+         currentStr,\
+         errorBuffer.getBuff()\
+     ));
 }
 
 void Parser::genExpressionError( ExpressionException &expr ){
-    errorBuffer.clearBuff();
-    if ( expr.type == ExpressionException::Type::INVALID_OP ){
-        errorBuffer.append("Invalid operator %s in expression.",buff);
-    } else if ( expr.type == ExpressionException::Type::INVALID_TOKEN ){
-        errorBuffer.append("Invalid token %s in expression.",buff);
-    }
-    errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
-        currentLine,\
-        currentStr,\
-        errorBuffer.getBuff()\
-    ));
+     errorBuffer.clearBuff();
+     if ( expr.type == ExpressionException::Type::INVALID_OP ){
+         errorBuffer.append("Invalid operator %s in expression.",buff);
+     } else if ( expr.type == ExpressionException::Type::INVALID_TOKEN ){
+         errorBuffer.append("Invalid token %s in expression.",buff);
+     }
+     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
+         currentLine,\
+         currentStr,\
+         errorBuffer.getBuff()\
+     ));
 }
 void Parser::genlabelError(){
-    errorBuffer.clearBuff();
-    errorBuffer.append("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
-    errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
-        currentLine,\
-        currentStr,\
-        errorBuffer.getBuff()\
-    ));
+     errorBuffer.clearBuff();
+     errorBuffer.append("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
+     errorList.push_back(ErrorInfo ( ErrorInfo :: ErrorLocation :: ERR_PARSER,\
+         currentLine,\
+         currentStr,\
+         errorBuffer.getBuff()\
+     ));
 
 }
 ParseObj Parser :: parseRtype ( ){
-    Integer reg1,reg2,reg3;
-    ParseObj p( current, currentStr, currentLine,insCount+1 );
+     Integer reg1,reg2,reg3;
+     ParseObj p( current, currentStr, currentLine,insCount+1 );
 #if 0
     /* 
      * Only valid instructions are counted by the parser.
@@ -364,47 +336,46 @@ ParseObj Parser :: parseRtype ( ){
         reg3 = parseRegister();
     }
 #endif
-    err = true;
-    try {
-        reg1 = parseRegister();
-        lex.expect( Lexer :: TOKEN_COMMA ,buff );
-        reg2 = parseRegister();
-        lex.expect( Lexer :: TOKEN_COMMA ,buff );
-        if ( current.isShiftLogical() ){
-            reg3 = parseInt();
-        } else {
-            reg3 = parseRegister();
-        }
-        parseInsEnd();
-        err = false;
-    } catch ( ... ){
-         throw;
-    }
-    p.setRtype( reg1,reg2,reg3 );
-    return p;
+     err = true;
+     try {
+          reg1 = parseRegister();
+          lex.expect( Lexer :: TOKEN_COMMA ,buff );
+          reg2 = parseRegister();
+          lex.expect( Lexer :: TOKEN_COMMA ,buff );
+           if ( current.isShiftLogical() ){
+                reg3 = parseInt();
+           } else {
+                reg3 = parseRegister();
+           }
+          parseInsEnd();
+          err = false;
+     } catch ( ... ){
+          throw;
+     }
+     p.setRtype( reg1,reg2,reg3 );
+     return p;
 }
 
 ParseObj Parser :: parseItype ( ){
-    Integer rs,rt,addr;
-    ParseObj p(current, currentStr, currentLine, insCount + 1);
-    try {
-    rt = parseRegister();
-    lex.expect(Lexer::TOKEN_COMMA, buff);
-    rs = parseRegister();
-    lex.expect(Lexer::TOKEN_COMMA,buff); 
-    addr = parseInt();
-    parseInsEnd();
-    } catch ( ... ){
-         throw;
-    }
-    p.setItype( rs,rt,addr );
-    return p;
+     Integer rs,rt,addr;
+     ParseObj p(current, currentStr, currentLine, insCount + 1);
+     try {
+     rt = parseRegister();
+     lex.expect(Lexer::TOKEN_COMMA, buff);
+     rs = parseRegister();
+     lex.expect(Lexer::TOKEN_COMMA,buff); 
+     addr = parseInt();
+     parseInsEnd();
+     } catch ( ... ){
+          throw;
+     }
+     p.setItype( rs,rt,addr );
+     return p;
 }
 
 ParseObj Parser::parseLS(){
-    Integer rs,rt,off;
+     Integer rs,rt,off;
      ParseObj p( current, currentStr , currentLine, insCount + 1);
-    try{
      rt = parseRegister();
      lex.expect(Lexer::TOKEN_COMMA,buff);
      off = parseInt();
@@ -412,59 +383,54 @@ ParseObj Parser::parseLS(){
      rs = parseRegister();
      lex.expect(Lexer::TOKEN_RPAREN,buff);
      parseInsEnd();
-    } catch ( ... ){
-         throw;
-    }
-    p.setItype(rs,rt,off);
-    return p;
+     p.setItype(rs,rt,off);
+     return p;
 }
 
 ParseObj Parser::parseBranch(){
-    Integer rs,rt,offset;
-    ParseObj p(current, currentStr, currentLine, insCount + 1 );
-    rs = parseRegister();
-    lex.expect(Lexer::TOKEN_COMMA,buff);
-    rt = parseRegister();
-    lex.expect(Lexer::TOKEN_COMMA,buff);
-    if ( lex.isToken(Lexer::TOKEN_NAME) ){
-//        const char *str = strdup( buff ); // TODO: replace strdup with something more useful
-        p.setBranch(rs,rt,buff);
-    } else if ( lex.isToken( Lexer::TOKEN_INT ) ){
-        offset = lex.getInt();
-        p.setBranch( rs, rt, offset );
-    } else if ( !err ) {
-        throw LabelError();
-//        err = true;
-//        displayError("Expected jump offset (integer) or Label name. Got \'%s\' instead.",buff);
-    }
-    lex.next(buff);
-    parseInsEnd();
-    return p;
+     Integer rs,rt,offset;
+     ParseObj p(current, currentStr, currentLine, insCount + 1 );
+     rs = parseRegister();
+     lex.expect(Lexer::TOKEN_COMMA,buff);
+     rt = parseRegister();
+     lex.expect(Lexer::TOKEN_COMMA,buff);
+     if ( lex.isToken(Lexer::TOKEN_NAME) ){
+//         const char *str = strdup( buff ); // TODO: replace strdup with something more useful
+          p.setBranch(rs,rt,buff);
+     } else if ( lex.isToken( Lexer::TOKEN_INT ) ){
+          offset = lex.getInt();
+          p.setBranch( rs, rt, offset );
+     } else if ( !err ) {
+         throw LabelError();
+//         err = true;
+//         displayError("Expected jump offset (integer) or Label name. Got \'%s\' instead.",buff);
+     }
+     lex.next(buff);
+     parseInsEnd();
+     return p;
 }
 
 ParseObj Parser::parseJump(){
-    ParseObj p (current,currentStr, currentLine, insCount + 1);
-    if ( lex.isToken(Lexer::TOKEN_NAME) ){
-        p.setJump(buff);
-    } else if ( lex.isToken(Lexer::TOKEN_INT) ){
-        Integer address = lex.getInt();
-        p.setJump(address);
-    } else {
-        throw LabelError();
- //       err = true;
- //       displayError("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
-    }
-    lex.next(buff);
-    parseInsEnd();
-    return p;
+     ParseObj p (current,currentStr, currentLine, insCount + 1);
+     if ( lex.isToken(Lexer::TOKEN_NAME) ){
+          p.setJump(buff);
+     } else if ( lex.isToken(Lexer::TOKEN_INT) ){
+          Integer address = lex.getInt();
+          p.setJump(address);
+     } else {
+          throw LabelError();
+ //        err = true;
+ //        displayError("Expected jump offset ( integer ) or Label name. Got \'%s\' instead.",buff);
+     }
+     lex.next(buff);
+     parseInsEnd();
+     return p;
 }
 
 void Parser::parseInsEnd(){
-    if ( !lex.matchInsEnd(buff) ){
-        throw InstructionEndException();
-//        err = true;
-//        displayError("Too many arguments to instruction %s.", current.str.c_str() );
-    }
+     if ( !lex.matchInsEnd(buff) ){
+          throw InstructionEndException();
+     }
 }
 
 ParseObj Parser::parseJr(){
@@ -591,6 +557,9 @@ ParseObj Parser::parse( ){
     } else if (lex.isToken(Lexer::TOKEN_END)){
          end = true;
         return ParseObj();
+    } else if ( lex.isToken( Lexer::TOKEN_NEWLINE ) ){
+         lex.next( buff );
+         return parse();
     }
     parseSuccess = false;
     errorBuffer.clearBuff();
@@ -698,39 +667,39 @@ int Parser::parseBaseExpr(){
 }
 
 int Parser::parseUnaryExpr(){
-    if ( lex.isUnaryOp() && !err ){
-        Lexer::TokenKind op = lex.kind;
-        lex.next(buff);
-        int val = parseUnaryExpr();
-        return performUnaryOp(op,val);
-    } else {
-        return parseBaseExpr();
-    }
-    return 0;
+     if ( lex.isUnaryOp() ){
+          Lexer::TokenKind op = lex.kind;
+          lex.next(buff);
+          int val = parseUnaryExpr();
+          return performUnaryOp(op,val);
+     } else {
+          return parseBaseExpr();
+     }
+     return 0;
     
 }
 int Parser::parseMulExpr(){
-    int val = parseUnaryExpr();
-    while ( lex.isMulOp() && !err ){
-        Lexer::TokenKind op = lex.kind;
-        lex.next(buff);
-        int rval = parseMulExpr();
-        val = performBinaryOp(op,val,rval);
-    }
+     int val = parseUnaryExpr();
+     while ( lex.isMulOp() && !err ){
+          Lexer::TokenKind op = lex.kind;
+          lex.next(buff);
+          int rval = parseMulExpr();
+          val = performBinaryOp(op,val,rval);
+     }
     return val;
 }
 int Parser::parseAddExpr(){
-    int val = parseMulExpr();
-    while ( lex.isAddOp() && !err ){
-        Lexer::TokenKind op = lex.kind;
-        lex.next(buff);
-        int rval = parseMulExpr();
-        val = performBinaryOp(op,val,rval);
-    }
-    return val;
+     int val = parseMulExpr();
+     while ( lex.isAddOp() && !err ){
+          Lexer::TokenKind op = lex.kind;
+          lex.next(buff);
+          int rval = parseMulExpr();
+          val = performBinaryOp(op,val,rval);
+     }
+     return val;
 }
 int Parser::parseExpr(){
-    return parseAddExpr();
+     return parseAddExpr();
 }
 
 #define TEST_EQ(x,y,msg)\

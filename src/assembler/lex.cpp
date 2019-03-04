@@ -129,10 +129,10 @@ void Lexer :: next (char *buff){
             while ( *stream && *stream != '\n' ){
                 stream++;
             }
-            if ( *stream == '\n' ){
-                line++;
-                line_start = ++stream;
-            }
+            //if ( *stream == '\n' ){
+            //    line++;
+            //    line_start = ++stream;
+            //}
             next(buff);
             break;
         case '\n': case '\t': case '\r': case ' ':
